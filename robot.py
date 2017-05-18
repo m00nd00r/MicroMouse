@@ -2,6 +2,18 @@ import numpy as np
 import Graph
 from Queues import Queue,PriorityQueue
 
+dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
+                    'd': ['r', 'd', 'l'], 'l': ['d', 'l', 'u'],
+                    'up': ['l', 'u', 'r'], 'right': ['u', 'r', 'd'],
+                    'down': ['r', 'd', 'l'], 'left': ['d', 'l', 'u']}
+dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
+                    'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
+dir_move = {'u': [0, 1], 'r': [1, 0], 'd': [0, -1], 'l': [-1, 0]}
+dir_rotation = {'u': {'l':-1, 'u':0, 'r':1}, 'r': {'u':-1, 'r':0, 'd':1},
+                    'd': {'r':-1, 'd':0, 'l':1}, 'l': {'d':-1, 'l':0, 'u':1},
+                    'up': {'l':-1, 'u':0, 'r':1}, 'right': {'u':-1, 'r':0, 'd':1},
+                    'down': {'r':-1, 'd':0, 'l':1}, 'left': {'d':-1, 'l':0, 'u':1}}
+
 class Robot(object):
     def __init__(self, maze_dim):
         '''
@@ -17,22 +29,12 @@ class Robot(object):
         self.maze_dim = maze_dim
         self.g = Graph()
         
-        self.dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
-                            'd': ['r', 'd', 'l'], 'l': ['d', 'l', 'u'],
-                            'up': ['l', 'u', 'r'], 'right': ['u', 'r', 'd'],
-                            'down': ['r', 'd', 'l'], 'left': ['d', 'l', 'u']}
-        self.dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
-                            'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
-        self.dir_move = {'u': [0, 1], 'r': [1, 0], 'd': [0, -1], 'l': [-1, 0]}
-        self.dir_rotation = {'u': {'l':-1, 'u':0, 'r':1}, 'r': {'u':-1, 'r':0, 'd':1},
-                            'd': {'r':-1, 'd':0, 'l':1}, 'l': {'d':-1, 'l':0, 'u':1},
-                            'up': {'l':-1, 'u':0, 'r':1}, 'right': {'u':-1, 'r':0, 'd':1},
-                            'down': {'r':-1, 'd':0, 'l':1}, 'left': {'d':-1, 'l':0, 'u':1}}
+        
 
         self.next_cell = ()
         self.goal = ()
         
-        self.start = (0,0)
+        self.start = self.location
         self.frontier = Queue()
         self.frontier.put(start)
         self.p_frontier = PriorityQueue()
@@ -102,7 +104,8 @@ class Robot(object):
         #diff shows me which direction the robot will have to turn to when moving from the current cell
         #to the next cell.
         #Use this value to look up which direction this translates to in the dir_move dictionary.
-        #This use this direction to look up the rotation factor given the heading in the dir_rotation
+        #This use this direction to look up the rotation factor given the heading in the 
+        
         #dictionary. These operations will return -1, 0, 1 which will be multiplied by 90 to determine
         #the value of the rotation necessary to arrive at the next cell.
         #The problem is that this can't be used for moving in reverse. The only reverse would be used is
@@ -121,7 +124,7 @@ class Robot(object):
         #The above code can be collapsed to the following. The dict comprehension inside the braces, {},
         #returns a set that can't be used to iterate the dir_rotation dict, so I used the set.pop() method to
         #pop out the value that can then be used to iterate through the dict.
-            rotation = 90 * self.dir_rotation[heading][set.pop({k for k,v in self.dir_move.iteritems() if tuple(v) == diff})]
+            rotation = 90 * dir_rotation[heading][set.pop({k for k,v in dir_move.iteritems() if tuple(v) == diff})]
             movement = 1
             
         
@@ -136,9 +139,9 @@ class Robot(object):
         
         # perform rotation
         if rot == -90:
-            r_pos['heading'] = self.dir_sensors[r_pos['heading']][0]
+            r_pos['heading'] = dir_sensors[r_pos['heading']][0]
         elif rot == 90:
-            r_pos['heading'] = self.dir_sensors[r_pos['heading']][2]
+            r_pos['heading'] = dir_sensors[r_pos['heading']][2]
         elif rot == 0:
             pass
         else:
@@ -151,17 +154,17 @@ class Robot(object):
         while mov:
             if mov > 0:
                 if self.g.is_permissible(r_pos['location'], r_pos['heading']):
-                    r_pos['location'][0] += self.dir_reverse[r_pos['heading']][0]
-                    r_pos['location'][1] += self.dir_reverse[r_pos['heading']][1]
+                    r_pos['location'][0] += dir_reverse[r_pos['heading']][0]
+                    r_pos['location'][1] += dir_reverse[r_pos['heading']][1]
                     mov -= 1
                 else:
                     print "Movement stopped by wall."
                     mov = 0
             else:
-                rev_heading = self.dir_reverse[r_pos['heading']]
+                rev_heading = dir_reverse[r_pos['heading']]
                 if self.g.is_permissible(r_pos['location'], rev_heading):
-                    r_pos['location'][0] += self.dir_reverse[rev_heading][0]
-                    r_pos['location'][1] += self.dir_reverse[rev_heading][1]
+                    r_pos['location'][0] += dir_reverse[rev_heading][0]
+                    r_pos['location'][1] += dir_reverse[rev_heading][1]
                     mov += 1
                 else:
                     print "Movement stopped by wall."
