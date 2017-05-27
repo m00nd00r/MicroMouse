@@ -36,7 +36,8 @@ class Robot(object):
                                  (0, 1): {'d': 1, 'l': 0, 'r': 0, 'u': 10},
                                  (0, 2): {'d': 2, 'l': 0, 'r': 3, 'u': 9}}
                                 
-                                The self.maze_map dict will look like above after 3 'up' moves from (0,0)
+                                The self.maze_map dict will look like above after 3 'up' moves from (0,0),
+                                for test_maze_01.txt
                             '''
         self.dead_end_map = {}
         self.closed = [[0 for row in range(maze_dim)] for col in range(maze_dim)]
@@ -74,18 +75,37 @@ class Robot(object):
     
     def explore(self, sensors):
         #if there are more than 1 open directions to choose, pick one at random
-        if np.count_nonzero(sensors):
-            rot_ind = random.choice(np.nonzero(sensors)[0])
+        #If robot is still in the dead end corridor, keep backing out of corridor,
+        if np.count_nonzero(sensors) > 1:
+            rot_ind = random.choice(np.flatnonzero(sensors))
             rotation = self.rotation_index[rot_ind]
             movement = 1
+        #If there's only 1 direction to move, just move there
+        elif np.count_nonzero(sensors) = 1:
+            rotation = self.rotation_index[np.flatnonzero(sensors).item()]
+            movement = 1
         else:
-            #If dead end, reverse until 3 maze_map directions > 0
+            #If sensors all read 0, robot is in a dead end
             dead_end = True
-            while dead_end:
-                num_open = self.maze_map[
+            
+        #If dead end, reverse until 3 maze_map directions > 0
+        if dead_end:
+            num_open = np.count_nonzero(self.maze_map[tuple(self.location)])
+            #If in the dead end cell or having moved back a cell the next opening is directly backwards,
+            #don't rotate and move back 1 cell.
+            if num_open = 1 or (num_open = 2 and self.maze_map[tuple(self.location)][self.dir_reverse[self.heading]] > 0)
                 movement = -1
                 rotation =  0
-                
+            #If the other opening that is not the cell we just came from is either to the left or right, rotate
+            #the opposite direction of the opening and reverse 1 cell.
+            elif num_open = 2 and self.maze_map[tuple(self.location)][self.dir_reverse[self.heading]] == 0:
+                movement = -1
+                opening = [k for k,v in self.maze_map[tuple(self.location)].items() if k != self.heading and v != 0][0]
+                rotation = self.dir_rotation[self.heading][self.dir_reverse[opening]]
+            #If number of openings is 3 or 4, robot is out of dead end.
+            else:
+                dead_end = False
+                #Add a wall here to the maze_map to prevent robot from re-entering the dead end corridor
             
         #Update position from last roation and movement updates
         update_position(rotation,movement)
@@ -176,7 +196,7 @@ class Robot(object):
         
         if self.exploring:
             #Update the map with the new position
-            update_map(np.array(sensors))
+            update_map(sensors)
             #get next rotation, movement values
             rotation, movement = self.explore(np.array(sensors))
         else:
