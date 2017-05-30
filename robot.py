@@ -63,30 +63,49 @@ class Robot(object):
         #add to this dictionary the previous cell that the robot just came from as having no wall either
         #the exception is cell (0,0) at the start - it has the boundary wall behind it.
         if self.location == self.start:
-            self.maze_map[self.location].update({self.dir_reverse[self.heading]:0})
+            self.maze_map[tuple(self.location)].update({self.dir_reverse[self.heading]:0})
         else: 
             self.maze_map[tuple(self.location)][self.dir_reverse[self.heading]] = \
-                self.maze_map[(0,1)].get(self.dir_reverse[self.heading],1) + 1
+                self.maze_map[tuple(self.location)].get(self.dir_reverse[self.heading],1) + 1
     
     def update_position(self, rot, mov):
         # find the new heading after rotating from the current heading
         self.heading = [k for k,v in self.dir_rotation[self.heading].items() if v == rot][0]
         # apply movment
-        self.location = map(add,self.location,[i*mov for i in dir_move[self.heading]])
+        self.location = map(add,self.location,[i*mov for i in self.dir_move[self.heading]])
     
-    def check_dead_end(self, location, sens):
-        #Check available openings for dead ends or dead end corridors
+    def get_neighbors(self, location):
+        opening = []
+        neighbors = []
+        #Check for available neighbor locations that are open
+        opening.append([k for k,v in self.maze_map[tuple(location)].items() and k not self.dir_reverse[self.heading] if v != 0])
+        neighbors.apend([map(add,location,v) for k,v in self.dir_move.items()])
         
+        return neighbors
+
+    def check_dead_ends(self):
+        open_dirs = [] #Directions available to move from current location
+        neighbor_cells = [] #Neighbor cells in the open_dirs list of available headings
+        no_dead_ends = [] #List of sensor list indices that won't lead to a dead end
+        #Check for available neighbor locations to current location in maze_map that are open
+        open_dirs = [k for k,v in self.maze_map[tuple(self.location)].items() if k != self.dir_reverse[self.heading] and v != 0]
+        for i in open_dirs:
+            neighbor_cells = map(add,self.location,self.dir_move[d])
+            if tuple(neighbor_cells) not in self.dead_end_set:
+                no_dead_ends.append(self.dir_sensors[self.heading].index(i))
+        return no_dead_ends
     
     def explore(self, sensors):
-        #if there are more than 1 open directions to choose, pick one at random
         
+        #if there are more than 1 open directions to choose, pick one at random
         if np.count_nonzero(sensors) > 1:
             if self.dead_end:
                 self.dead_end = False
             #Check if any openings lead to dead end
-            no_dead_ends = check_dead_end(self.location, sensors)
+            no_dead_ends = check_dead_ends()
+            #Pick one of the sensor list indices at random
             rot_ind = random.choice(no_dead_ends)
+            #Rotate and move
             rotation = self.rotation_index[rot_ind]
             movement = 1
         #If there's only 1 direction to move, just move there
