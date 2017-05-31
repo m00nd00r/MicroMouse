@@ -3,6 +3,19 @@ from operator import add
 import heapq
 import collections
 
+dir_sensors =  {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
+                     'd': ['r', 'd', 'l'], 'l': ['d', 'l', 'u'],
+                     'up': ['l', 'u', 'r'], 'right': ['u', 'r', 'd'],
+                     'down': ['r', 'd', 'l'], 'left': ['d', 'l', 'u']}
+dir_reverse =  {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
+                     'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
+dir_move =     {'u': [0, 1], 'r': [1, 0], 'd': [0, -1], 'l': [-1, 0]}
+dir_rotation = {'u': {'l':-1, 'u':0, 'r':1}, 'r': {'u':-1, 'r':0, 'd':1},
+                    'd': {'r':-1, 'd':0, 'l':1}, 'l': {'d':-1, 'l':0, 'u':1},
+                    'up': {'l':-1, 'u':0, 'r':1}, 'right': {'u':-1, 'r':0, 'd':1},
+                    'down': {'r':-1, 'd':0, 'l':1}, 'left': {'d':-1, 'l':0, 'u':1}}
+rotation_index = [-1, 0, 1]
+        
 class Robot(object):
     def __init__(self, maze_dim):
         '''
@@ -15,22 +28,10 @@ class Robot(object):
         self.location = self.start = [0, 0]
         self.heading = 'up'
         self.maze_dim = maze_dim
+        self.sensors = []
         self.steps = 0
         self.exploring = True
         self.goal_door = False
-        
-        self.dir_sensors =  {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
-                             'd': ['r', 'd', 'l'], 'l': ['d', 'l', 'u'],
-                             'up': ['l', 'u', 'r'], 'right': ['u', 'r', 'd'],
-                             'down': ['r', 'd', 'l'], 'left': ['d', 'l', 'u']}
-        self.dir_reverse =  {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
-                             'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
-        self.dir_move =     {'u': [0, 1], 'r': [1, 0], 'd': [0, -1], 'l': [-1, 0]}
-        self.dir_rotation = {'u': {'l':-1, 'u':0, 'r':1}, 'r': {'u':-1, 'r':0, 'd':1},
-                            'd': {'r':-1, 'd':0, 'l':1}, 'l': {'d':-1, 'l':0, 'u':1},
-                            'up': {'l':-1, 'u':0, 'r':1}, 'right': {'u':-1, 'r':0, 'd':1},
-                            'down': {'r':-1, 'd':0, 'l':1}, 'left': {'d':-1, 'l':0, 'u':1}}
-        self.rotation_index = [-1, 0, 1]
         
         self.maze_map = {}   '''{(0, 0): {'d': 0, 'l': 0, 'r': 0, 'u': 11},
                                  (0, 1): {'d': 1, 'l': 0, 'r': 0, 'u': 10},
@@ -38,119 +39,115 @@ class Robot(object):
                                 
                                 The self.maze_map dict will look like above after 3 'up' moves from (0,0),
                                 for test_maze_01.txt
-                            '''
+                             '''
         self.dead_end = False
         self.dead_end_set = set()   #Cells that lead into dead ends and dead end corridors.
         self.open = []    #The open list of cells that have been assigned costs but not yet closed
-        self.closed = [[0 for row in range(maze_dim)] for col in range(maze_dim)]
+        self.closed = [[0 for row in range(self.maze_dim)] for col in range(self.maze_dim)]
         self.closed[self.start[0]][self.start[1]] = 1
         
         self.expand = [[0 for row in range(maze_dim)] for col in range(maze_dim)]
         
     # check if goal room entered
-    def goal_door(m_dim, loc):
-        goal_bounds = [m_dim/2 - 1, m_dim/2]
-        if loc[0] in goal_bounds and loc[1] in goal_bounds:
-            goal_door_location = loc
+    def goal_door(self):
+        goal_bounds = [self.maze_dim/2 - 1, self.maze_dim/2]
+        if self.location[0] in goal_bounds and self.location[1] in goal_bounds:
+            goal_door_location = self.location
+            self.goal_door = True
         else:
             goal_door_location = None
+            
         return goal_door_location
     
     def update_maze_map(self,sens):
         #if current location not in the map, add it along with the wall info for all 4 neighbor cells
         self.maze_map.setdefault(self.location, \
-                            dict((heading,i) for heading,i in zip(self.dir_sensors[self.heading],sens)))
+                            dict((heading,i) for heading,i in zip(dir_sensors[self.heading],sens)))
         #add to this dictionary the previous cell that the robot just came from as having no wall either
         #the exception is cell (0,0) at the start - it has the boundary wall behind it.
         if self.location == self.start:
-            self.maze_map[tuple(self.location)].update({self.dir_reverse[self.heading]:0})
+            self.maze_map[tuple(self.location)].update({dir_reverse[self.heading]:0})
         else: 
-            self.maze_map[tuple(self.location)][self.dir_reverse[self.heading]] = \
-                self.maze_map[tuple(self.location)].get(self.dir_reverse[self.heading],1) + 1
+            self.maze_map[tuple(self.location)][dir_reverse[self.heading]] = \
+                self.maze_map[tuple(self.location)].get(dir_reverse[self.heading],1) + 1
     
     def update_position(self, rot, mov):
         # find the new heading after rotating from the current heading
-        self.heading = [k for k,v in self.dir_rotation[self.heading].items() if v == rot][0]
+        self.heading = [k for k,v in dir_rotation[self.heading].items() if v == rot][0]
         # apply movment
-        self.location = map(add,self.location,[i*mov for i in self.dir_move[self.heading]])
+        self.location = map(add,self.location,[i*mov for i in dir_move[self.heading]])
     
-    def get_neighbors(self, location):
+    def neighbors(self):
         opening = []
         neighbors = []
         #Check for available neighbor locations that are open
-        opening.append([k for k,v in self.maze_map[tuple(location)].items() and k not self.dir_reverse[self.heading] if v != 0])
-        neighbors.apend([map(add,location,v) for k,v in self.dir_move.items()])
+        open_dirs = [k for k,v in self.maze_map[tuple(self.location)].items() if v != 0]
+        neighbors = [map(add,self.location,dir_move[i]) for i in open_dirs]
         
         return neighbors
 
-    def check_dead_ends(self):
+    def dead_ends(self):
         open_dirs = [] #Directions available to move from current location
         neighbor_cells = [] #Neighbor cells in the open_dirs list of available headings
         no_dead_ends = [] #List of sensor list indices that won't lead to a dead end
         #Check for available neighbor locations to current location in maze_map that are open
-        open_dirs = [k for k,v in self.maze_map[tuple(self.location)].items() if k != self.dir_reverse[self.heading] and v != 0]
+        open_dirs = [k for k,v in self.maze_map[tuple(self.location)].items() if k != dir_reverse[self.heading] and v != 0]
         for i in open_dirs:
-            neighbor_cells = map(add,self.location,self.dir_move[d])
+            neighbor_cells = map(add,self.location,dir_move[d])
             if tuple(neighbor_cells) not in self.dead_end_set:
-                no_dead_ends.append(self.dir_sensors[self.heading].index(i))
+                no_dead_ends.append(dir_sensors[self.heading].index(i))
         return no_dead_ends
     
-    def explore(self, sensors):
-        
+    #Purely random mapping only to use as a baseline for the poorest possible performance
+    def random_explore(self):
+        goal_door()
+        if 
+        #randomly choose the index of a direction in the the sensor array
+        rot_ind = random.choice(self.sensors.flatten())
+        #Rotate and move
+        rotation = rotation_index[rot_ind]
+        movement = 1
+    
+    #Random selection of available openings while trying to avoid dead ends
+    #Tries to improve on random_explore
+    def avoid_dead_ends_explore(self):
         #if there are more than 1 open directions to choose, pick one at random
-        if np.count_nonzero(sensors) > 1:
+        if np.count_nonzero(self.sensors) > 1:
             if self.dead_end:
                 self.dead_end = False
             #Check if any openings lead to dead end
-            no_dead_ends = check_dead_ends()
+            no_dead_ends = dead_ends()
             #Pick one of the sensor list indices at random
             rot_ind = random.choice(no_dead_ends)
             #Rotate and move
-            rotation = self.rotation_index[rot_ind]
+            rotation = rotation_index[rot_ind]
             movement = 1
         #If there's only 1 direction to move, just move there
-        elif np.count_nonzero(sensors) = 1:
+        elif np.count_nonzero(self.sensors) = 1:
             if self.dead_end:
                 self.dead_end_set.add(self.location)
-            rot_ind = np.flatnonzero(sensors).item()
-            rotation = self.rotation_index[rot_ind]
+            rot_ind = np.flatnonzero(self.sensors).item()
+            rotation = rotation_index[rot_ind]
             movement = 1
         else:
             #If sensors all read 0, robot is in a dead end
             self.dead_end = True
             movement = 0
             rotation = 1
-            self.dead_end_set.add(self.location)                                          
-            
-        #If dead end, reverse until 3 maze_map directions > 0
-        #if dead_end:
-            #Keep track of how many openings there are while backing out
-            #num_open = np.count_nonzero(self.maze_map[tuple(self.location)])
-            #If in the dead end cell or having moved back a cell the next opening is directly backwards,
-            #don't rotate and move back 1 cell.
-            #if num_open = 1 or (num_open = 2 and self.maze_map[tuple(self.location)][self.dir_reverse[self.heading]] > 0)
-
-            #If robot gets to a corner in the dead end corridor, rotate toward opening and move toward it
-            #elif num_open = 2 and self.maze_map[tuple(self.location)][self.dir_reverse[self.heading]] == 0:
-                
-            #If number of openings is 3 or 4, robot is out of dead end.
-            #else:
-                
+            self.dead_end_set.add(self.location)
             
         #Update position from last roation and movement updates
         update_position(rotation,movement)
         
         return rotation*90, movement
     
-    def reconstruct_path(came_from, start, goal, num):
+    def reconstruct_path(came_from, start, goal):
         current = goal
         path = [current]
         while current != start:
             current = came_from[current]
             path.append(current)
-        if num == first:
-            #path.append(start) # optional
-            path.reverse() # optional
+        path.reverse()
         return path
 
     def heuristic(a, b):
@@ -159,7 +156,7 @@ class Robot(object):
         (x2, y2) = b
         return abs(x1 - x2) + abs(y1 - y2)
     
-    def a_star_search(graph):
+    def a_star_search(self):
         #frontier = PriorityQueue()
         #frontier.put(start, 0)
         #came_from = {}
@@ -188,7 +185,10 @@ class Robot(object):
         return self.route
 
     
-    def goal_seek(self, sensors):
+    def d_star_lite_search():
+        
+    
+    def goal_seek(self):
         
         
         #Update position from last rotation and movement updates
@@ -218,18 +218,21 @@ class Robot(object):
 
         #Track total number of steps robot takes
         self.steps += 1
+        self.sensors = np.array(sensors)
         
-        #Initialize rotation and movement at start of first run and start of second run
-        if (self.exploring and self.start) or (not self.exploring and self.start):
+        #Initialize rotation and movement at start of first run
+        if (self.exploring and self.start):
             rotation = 0
             movement = 0
         
         if self.exploring:
+            
             #Update the map with the new position
             update_maze_map(sensors)
             #get next rotation, movement values
-            rotation, movement = self.explore(np.array(sensors))
+            rotation, movement = self.random_explore()
+            rotation, movement = self.avoid_dead_ends_explore()
         else:
-            rotation, movement = self.goal_seek(sensors)
+            rotation, movement = self.goal_seek()
 
 return rotation, movement
