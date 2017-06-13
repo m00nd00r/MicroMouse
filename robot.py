@@ -281,25 +281,25 @@ class Robot(object):
         #the same direction. This number will be the movement.
         movement = 0
         heading = [self.heading]
-        if self.location != self.goal_door_location:
-            for step in range(4):
-                heading.append([k for k,v in dir_move.iteritems() \
-                        if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
-                if heading[step] == heading[step+1]:
-                    movement += 1
-                else:
-                    break
-            if movement > 1: 
-                rotation = 0
-            else: 
-                movement = 1
-                rotation = dir_rotation[heading[0]][heading[1]]
-        
-            self.update_position(rotation,movement)   
-            self.count += 1
-            self.index += movement
+        #if self.location != self.goal_door_location:
+        for step in range(4):
+            heading.append([k for k,v in dir_move.iteritems() \
+                    if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
+            if heading[step] == heading[step+1]:
+                movement += 1
+            else:
+                break
+        if movement > 1: 
+            rotation = 0
         else: 
-            print "Goal reached in {} steps.".format(count)
+            movement = 1
+            rotation = dir_rotation[heading[0]][heading[1]]
+        
+        self.update_position(rotation,movement)   
+        self.count += 1
+        self.index += movement
+        if self.location == self.goal_door_location: 
+            print "Goal reached in {} steps.".format(self.count)
         return rotation*90,movement
 
     def next_move(self, sensors):
