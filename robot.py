@@ -85,12 +85,9 @@ class Robot(object):
         self.sensors = np.array(sensors)
         
         if self.exploring:
-            #get next rotation, movement values
-            rotation, movement = self.explore()
-            #print self.location, self.heading, rotation, movement
-            
+            rotation, movement = self.explore()    #First run exploration mode to find goal and map maze
         else:
-            rotation, movement = self.exploit()
+            rotation, movement = self.exploit()    #Second run exploitation mode to race to goal
 
         return rotation, movement
     
@@ -396,7 +393,19 @@ class Robot(object):
         for i in range(len(grid)):
             print '[%s]'%'  '.join(map(str,grid[i]))
         #return printgrid
-    
+        
+    #Function to print out a dictionary as an array with start (0,0) in the lower left corner
+    def print_grid(self,grid):
+        printgrid = []
+        for i in reversed(range(self.maze_dim)):
+            gridrow = []
+            for j in range(self.maze_dim):
+                gridrow.append(grid.get((j,i),'-'))
+            printgrid.append(gridrow)
+        for i in range(len(printgrid)):
+            print '[%s]'%'  '.join(map(str,printgrid[i]))
+        #return printgrid
+        
     def neighbors(self, cell):
         open_dirs = []
         neighbors = []
@@ -488,18 +497,6 @@ class Robot(object):
     def d_star_lite_search(self):
         
         return path
-    
-    #Function to print out a dictionary as an array with start (0,0) in the lower left corner
-    def print_grid(self,grid):
-        printgrid = []
-        for i in reversed(range(self.maze_dim)):
-            gridrow = []
-            for j in range(self.maze_dim):
-                gridrow.append(grid.get((j,i),'-'))
-            printgrid.append(gridrow)
-        for i in range(len(printgrid)):
-            print '[%s]'%'  '.join(map(str,printgrid[i]))
-        #return printgrid
     
     def route_map(self, rot, mov):
         rmap = {}
