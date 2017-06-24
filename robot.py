@@ -1,9 +1,10 @@
 import numpy as np
 from operator import add, sub
 import heapq
-import collections
+#import collections
 import random
 import sys
+import time
 
 dir_sensors =  {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
                      'd': ['r', 'd', 'l'], 'l': ['d', 'l', 'u'],
@@ -27,6 +28,7 @@ class Robot(object):
         the robot is placed in.
         '''
 
+        self.start = time.clock()
         self.location = self.start = (0, 0)
         self.prev_location = ()
         self.heading = 'u'
@@ -90,14 +92,20 @@ class Robot(object):
             rotation, movement = self.exploit()    #Second run exploitation mode to race to goal
 
         return rotation, movement
-    
+
+#********************************************************************************************************
+
+### Function used during first run to find the goal and map the maze
+###
+
     def explore(self):
         if self.goal and (self.mapped or self.steps >= self.reset_threshold):
             self.planning = True
             rotation,movement = ('Reset','Reset')
-            self.exploring = False 
-            self.print_map(self.maze_map)
-            print '\nPercent of cell walls mapped is {:.0f}%.'.format(self.is_mapped())
+            self.exploring = False
+            print '\nNumber of walls mapped per cell:'
+            self.print_map1(self.maze_map)
+            print '\nPercent of cell walls mapped is {:.2%}.'.format(self.is_mapped())
             print 'Total number of moves for 1st run is {}.\n'.format(self.steps)
             return rotation,movement
         else:
@@ -110,21 +118,27 @@ class Robot(object):
             rotation,movement = self.smart_map_explore()
             self.update_position(rotation,movement)
             if self.location == self.goal_door_location:
-                self.print_map(self.maze_map)
+                self.print_map1(self.maze_map)
                 print '\nFound Goal in {} moves.'.format(self.steps)
                 print 'Percent of cell walls mapped is {:.0f}%.'.format(self.is_mapped())
             return rotation*90,movement
-    
+
+#********************************************************************************************************
+#********************************************************************************************************
+
+### Function used during the second run to exploit the mapped maze to find the fastest path to the goal
+###
+
     def exploit(self):
         #To begin relocate robot to start, heading up and compute the best route to goal_door
         if self.planning:
             self.location = self.start
             self.heading = 'u'
             self.goal_route = []
-            self.goal_route = self.a_star_search()
+            #self.goal_route = self.a_star_search()
+            self.goal_route = self.d_star_lite_search()
             self.action_list = []
             self.action_list.append('S')
-            #goal_route = d_star_lite_search()
             self.planning = False
         
         #Look through each set of three steps in goal_route from current location to see how many of them are in
@@ -137,6 +151,8 @@ class Robot(object):
                 #map locations in goal_route
                 heading.append([k for k,v in dir_move.iteritems() \
                         if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
+                #heading now contains the next 3 turns. Increment through the list, for each one that is that same as
+                #the current heading, add 1 to movement
                 if heading[step] == heading[step+1]:
                     movement += 1
                 else:
@@ -150,7 +166,6 @@ class Robot(object):
             self.update_position(rotation,movement)   
             self.count += 1
             self.index += movement
-            #print movement
             
         #Update route_map of rotations and movements for display
         self.route_map(rotation,movement)
@@ -158,10 +173,18 @@ class Robot(object):
         if self.location == self.goal_door_location:
             print 'Total length of route is {} grid cells.'.format(len(self.goal_route))
             print 'Total movements to goal = {}.'.format(self.count)
+            end = time.clock()
+            print 'Total compute time is {:.4} seconds.'.format(end - self.start[0])
 
         return rotation*90,movement
     
-    # check if goal room entered
+#********************************************************************************************************
+
+### The following helper functions are used during initialization and as aids to explore()
+
+### Function used during the second run to exploit the mapped maze to find the fastest path to the goal
+###
+
     def init_maze_map(self):
         for i in range(self.maze_dim):
             for j in range(self.maze_dim):
@@ -175,6 +198,33 @@ class Robot(object):
                 if j == self.maze_dim-1:
                     self.maze_map[(i,j)].update({'u':0})
 
+    def is_mapped(self):
+        walls = []
+        #Loop through maze_map and count number of walls that have been mapped
+        for i in self.maze_map:
+            walls.append(len(self.maze_map[i]))
+        wallnum = float(sum(walls))
+        #If they've all been mapped set mapped to True
+        if wallnum == 4*(self.maze_dim**2):
+            self.mapped = True
+        #Track percentage of walls mapped to help in analysis
+        #Want to determine minimum percentage of map necessary to achieve best scores
+        percent = wallnum/(4*(self.maze_dim**2))
+        return percent
+
+    def print_map1(self,pmap):
+        grid = []
+        for i in reversed(range(self.maze_dim)):
+            gridrow = []
+            for j in range(self.maze_dim):
+                if len(pmap[(j,i)]) > 0:
+                    gridrow.append(len(pmap[(j,i)]))
+                else:
+                    gridrow.append('-')
+            grid.append(gridrow)
+        for i in range(len(grid)):
+            print '[%s]'%'  '.join(map(str,grid[i]))
+        
     def goal_door(self):
         if self.location[0] in self.goal_bounds and self.location[1] in self.goal_bounds:
             goal_door_location = self.location
@@ -364,36 +414,13 @@ class Robot(object):
         
         
         return rotation,movement
-    
-    def is_mapped(self):
-        walls = []
-        #Loop through maze_map and count number of walls that have been mapped
-        for i in self.maze_map:
-            walls.append(len(self.maze_map[i]))
-        wallnum = float(sum(walls))
-        #If they've all been mapped set mapped to True
-        if wallnum == 4*(self.maze_dim**2):
-            self.mapped = True
-        #Track percentage of walls mapped to help in analysis
-        #Want to determine minimum percentage of map necessary to achieve best scores
-        percent = (wallnum/(4*(self.maze_dim**2)))*100
-        return percent
 
-    def print_map(self,pmap):
-        grid = []
-        for i in reversed(range(self.maze_dim)):
-            gridrow = []
-            for j in range(self.maze_dim):
-                if len(pmap[(j,i)]) > 0:
-                    gridrow.append(len(pmap[(j,i)]))
-                else:
-                    gridrow.append('-')
-            grid.append(gridrow)
-        print '\nNumber of walls mapped per cell:'
-        for i in range(len(grid)):
-            print '[%s]'%'  '.join(map(str,grid[i]))
-        #return printgrid
-        
+#********************************************************************************************************
+#********************************************************************************************************
+
+### These following helper functions are used as to aid the exploit() during the second run.
+###
+
     #Function to print out a dictionary as an array with start (0,0) in the lower left corner
     def print_grid(self,grid):
         printgrid = []
@@ -404,7 +431,6 @@ class Robot(object):
             printgrid.append(gridrow)
         for i in range(len(printgrid)):
             print '[%s]'%'  '.join(map(str,printgrid[i]))
-        #return printgrid
         
     def neighbors(self, cell):
         open_dirs = []
@@ -438,8 +464,11 @@ class Robot(object):
         (x1, y1) = a
         (x2, y2) = b
         return abs(x1 - x2) + abs(y1 - y2)
-        
-    #NOTE: This algorithm was adapted from Amit Patel's Red Blob Games website: http://www.redblobgames.com/
+
+
+### NOTE: This implementation of A* search was adapted from Amit Patel's Red Blob Games website: http://www.redblobgames.com/
+###
+
     def a_star_search(self):
         open = []
         heapq.heappush(open, (0, self.start))
@@ -457,7 +486,8 @@ class Robot(object):
         found = False  # flag that is set when goal is found
         resign = False # flag set if robot can't find goal
         count = 0
-                
+        
+        #This loop tracks the cost to get from any cell to the goal
         while not found and not resign:
             if len(open) == 0:
                 resign = True
@@ -465,6 +495,7 @@ class Robot(object):
             else:
                 count += 1
                 current = heapq.heappop(open)[1]
+                
                 if current == self.goal_door_location:
                     found = True
                 #else:
@@ -484,7 +515,8 @@ class Robot(object):
                             priority = move_cost + self.heuristic(self.goal_door_location, next_cell)
                             heapq.heappush(open,(priority, next_cell))
                             came_from[next_cell] = current
-                            
+        
+        #Once costs have all been calculated, we can now unpack the path to get from S to G
         current1 = self.goal_door_location
         path = [current1]
         while current1 != self.start:
@@ -495,12 +527,74 @@ class Robot(object):
         return path
     
     def d_star_lite_search(self):
+        value = {}          #Every key in value is one the orientations - u, r, d, l - that have each cell as values.
+                            #Each cell is also a key that contains the cost value for that cell in that orientation.
+                
+        policy = {}         #Every key in policy is one the orientations - u, r, d, l - that have each cell as values.
+                            #Each cell is also a key that contains the policy action - L, #, R - for that cell in
+                            #that orientation.
+                
+        path = []
+        route = {}
+        cost = [2, 1, 2]    #Cost for left turn, no turn, right turn
+        action_name = ['L', '#', 'R']    #Symbols for left turn, no turn, right turn
+        
+        for i in range(self.maze_dim):      
+            for j in range(self.maze_dim):
+                value[(i,j)] = {'u':99,'r':99,'d':99,'l':99}
+                policy[(i,j)] = {'u':99,'r':99,'d':99,'l':99}
+        
+        change = True
+        while change:
+            change = False
+            
+            for cell in self.maze_map:
+                for orientation in ['u','r','d','l']:
+                    if cell == self.goal_door_location:
+                        if value[cell][orientation] > 0:
+                            value[cell][orientation] = 0
+                            policy[cell][orientation] = 'G'
+                            change = True
+                            
+                    else:
+                        for i in range(3):
+                            o2 = dir_sensors[orientation][i]
+                            c2 = tuple(map(add,cell,dir_move[o2]))
+                            if o2 in self.maze_map[cell]:
+                                if c2 in self.maze_map and self.maze_map[cell][o2] != 0:
+                                    v2 = value[c2][o2] + cost[i]
+                                    if v2 < value[cell][orientation]:
+                                        change = True
+                                        value[cell][orientation] = v2
+                                        policy[cell][orientation] = action_name[i]
+        
+        #Print functions to visualize value and policy for debugging and understanding
+        #how the algorithm works.
+        #print_map2(value)
+        #print_map2(policy)
+            
+        cell = self.start
+        orientation = 'u'
+        route[cell] = policy[cell][orientation]
+        path = [cell]
+        
+        while policy[cell][orientation] != 'G':
+            if policy[cell][orientation] == '#':
+                o2 = orientation
+            elif policy[cell][orientation] == 'R':
+                o2 = dir_sensors[orientation][2]
+            elif policy[cell][orientation] == 'L':
+                o2 = dir_sensors[orientation][0]
+            cell = tuple(map(add,cell,dir_move[o2]))
+            orientation = o2
+            route[cell] = policy[cell][orientation]
+            path.append(cell)
         
         return path
     
+    #Function to create a list of moves from start (S) to goal (G) using '#' for no turn, 'L' for left turn, 'R' for right turn
     def route_map(self, rot, mov):
         rmap = {}
-        #if self.location != self.goal_door_location:
         if rot == 0:
             for m in range(mov):
                 self.action_list.append('#')
@@ -512,6 +606,7 @@ class Robot(object):
             self.action_list.pop()
             self.action_list.append('L')
             self.action_list.append('#')
+            
         if self.location == self.goal_door_location:
             self.action_list.pop()
             self.action_list.append('G')
@@ -519,3 +614,22 @@ class Robot(object):
                 rmap[self.goal_route[i]] = self.action_list[i]
             self.print_grid(rmap)
         #return rmap
+    
+    #Function visualize value and policy dictionaries in D* Lite
+    def print_map2(self,vmap):
+        grids = {'u':{},'r':{},'d':{},'l':{}}
+        for orientation in grids:
+            for i in range(self.maze_dim):
+                for j in range(self.maze_dim):
+                    grids[orientation][(i,j)] = vmap[(i,j)][orientation]
+    
+        for orientation in grids:
+            print orientation
+            gridmap = []
+            for j in reversed(range(maze_dim)):
+                gridrow = []
+                for i in range(maze_dim):
+                    gridrow.append(grids[orientation].get((i,j)))
+                gridmap.append(gridrow)
+            for i in range(len(gridmap)):
+                print '[%s]'%' '.join(map(str,[format(el,'^2') for el in gridmap[i]]))
