@@ -41,7 +41,6 @@ class Robot(object):
         self.planning = False     #Flag to allow a_star_search to run prior to second run
         self.goal = False         #Flag to indicate that the goal door was found
         self.mapped = False       #Flag to indicate that the maze has been fully explored
-        self.smart_map = False    #Flag to indicate smart map mode
         self.quad_list = [True,False,False,False]    #List of quadrants visited: [1,2,3,4].
         self.top_wall = False     #Flag to indicate top wall boundary has been reached
         self.right_wall = False   #Flag to indicate right wall boundary has been reached
@@ -120,6 +119,8 @@ class Robot(object):
             self.print_map1(self.maze_map)
             print '\nPercent of cell walls mapped is {:.0%}.'.format(self.is_mapped())
             print 'Total number of moves for 1st run is {}.\n'.format(self.steps)
+            print '\nNumber of times each cell visited:'
+            self.print_map3(self.count_map)
             return rotation,movement
         else:
             #Update the maze map with the current position
@@ -129,20 +130,17 @@ class Robot(object):
             self.is_mapped()
             #rotation,movement = self.random_explore()
             #rotation,movement = self.avoid_dead_ends_explore()
-            #rotation,movement = self.smart_map_explore1()
-            rotation,movement = self.smart_map_explore2()
+            rotation,movement = self.smart_map_explore1()
             self.update_position(rotation,movement)
             if self.location == self.goal_door_location:
                 self.print_map1(self.maze_map)
                 print '\nFound Goal in {} moves.'.format(self.steps)
                 print 'Percent of cell walls mapped is {:.0%}.'.format(self.is_mapped())
-            if self.steps == 999:
-                print '\nNumber of walls mapped per cell:'
-                self.print_map1(self.maze_map)
-                print '\nPercent of cell walls mapped is {:.0%}.'.format(self.is_mapped())
-                #print '\nNumber of times each cell visited:'
-                #self.print_map1(self.count_map)
-            
+                
+            if self.steps == 998:
+                self.print_map3(self.count_map)
+                print self.right_wall,self.pref_heading
+                
             return rotation*90,movement
 
 #********************************************************************************************************
@@ -250,6 +248,38 @@ class Robot(object):
         for i in range(len(grid)):
             print '[%s]'%'  '.join(map(str,grid[i]))
         
+    #Function visualize value and policy dictionaries in D* Lite
+    def print_map2(self,vmap):
+        grids = {'u':{},'r':{},'d':{},'l':{}}
+        for orientation in grids:
+            for i in range(self.maze_dim):
+                for j in range(self.maze_dim):
+                    grids[orientation][(i,j)] = vmap[(i,j)][orientation]
+    
+        for orientation in grids:
+            print orientation
+            gridmap = []
+            for j in reversed(range(maze_dim)):
+                gridrow = []
+                for i in range(maze_dim):
+                    gridrow.append(grids[orientation].get((i,j)))
+                gridmap.append(gridrow)
+            for i in range(len(gridmap)):
+                print '[%s]'%' '.join(map(str,[format(el,'^2') for el in gridmap[i]]))
+                
+    def print_map3(self,cmap):
+        grid = []
+        for i in reversed(range(self.maze_dim)):
+            gridrow = []
+            for j in range(self.maze_dim):
+                if (j,i) in cmap:
+                    gridrow.append(cmap[(j,i)])
+                else:
+                    gridrow.append('-')
+            grid.append(gridrow)
+        for i in range(len(grid)):
+            print '[%s]'%' '.join(map(str,[format(el,'^2') for el in grid[i]]))
+    
     def goal_door(self):
         if self.location[0] in self.goal_bounds and self.location[1] in self.goal_bounds:
             goal_door_location = self.location
@@ -269,7 +299,17 @@ class Robot(object):
         #if goal_door hasn't been found yet, check if this new position is the goal_door
         if not self.goal:
             self.goal_door_location = self.goal_door()
+            
+        if not self.right_wall and self.location[0] == self.maze_dim - 1:
+            self.right_wall = True
+            print self.location
+        if not self.top_wall and self.location[1] == self.maze_dim - 1:
+            self.top_wall = True
+        if not self.left_wall and self.right_wall and self.top_wall and self.location[0] == 0:
+            self.left_wall = True
+            
         self.map_strategy()
+        
     
     #For random exploration mapping that doesn't update any map cell that hasn't been visited by robot
     def update_maze_map1(self):
@@ -311,12 +351,6 @@ class Robot(object):
                 next_cell3 = tuple(map(add,self.location,dir_move[h]))
                 if next_cell3 in self.maze_map:
                     self.maze_map[next_cell3].setdefault(dir_reverse[h],0)
-        if self.location[0] == self.maze_dim:
-            self.top_wall == True
-        if self.location[1] == self.maze_dim:
-            self.right_wall == True
-        if self.right_wall and self.top_wall and self.location[0] == 0:
-            self.left_wall == True
     
     def update_count_map(self):
         self.count_map[self.location] = self.count_map.get(self.location,0) + 1
@@ -337,21 +371,24 @@ class Robot(object):
                 open_cells.append(tuple(neighbor_cells))
         return no_dead_ends,open_cells
     
+    #Called everytime update_position is called.
     def map_strategy(self):
         #Create a strategy for choosing which of mulitple available cells to move into based on moving
         #counter-clockwise around the grid and reaching the boundaries.
-        #if in quadrant 1 or 2 (lower half of maze) and right wall hasn't been reached:
-        if self.location[1] <= self.maze_dim/2:
+        #if in quadrant 1 or 2 (bottom half of maze) and right wall hasn't been reached:
+        if self.location[1] < self.maze_dim/2 and not self.right_wall:
             self.pref_heading = ['r','d','u','l']
         #if in quadrant 2 or 3 (right half of maze) and right wall has been reached:
-        elif self.location[0] > self.maze_dim/2 and self.right_wall:
+        elif self.location[0] >= self.maze_dim/2 and self.right_wall and not self.top_wall:
+            self.pref_heading = ['u','r','l','d']
+        elif self.location[0] >= self.maze_dim/2 and self.right_wall and self.top_wall:
             self.pref_heading = ['u','l','r','d']
         #if in quadrant 3 or 4 (top half of maze) and top wall has been reached:
-        elif self.location[1] > self.maze_dim/2 and self.top_wall:
+        elif self.location[1] >= self.maze_dim/2 and self.top_wall and not self.left_wall:
             self.pref_heading = ['l','u','d','r']
         #if in quadrant 3 or 1 (left half of maze) and left wall has been reached:
-        elif self.location[1] <= self.maze_dim/2 and self.left_wall:
-            self.pref_heading = ['d','r','l','u']
+        elif self.location[0] < self.maze_dim/2 and self.left_wall:
+            self.pref_heading = ['r','d','l','u']
     
     #Purely random mapping only to use as a baseline for the poorest possible performance
     def random_explore(self):
@@ -413,8 +450,6 @@ class Robot(object):
     #mapping strategy that will try to get to the goal as quickly as possible, then continue
     #mapping until a mapping threshold is met, or until the reset threshold is met.
     def smart_map_explore1(self):
-        if self.smart_map and self.find_cell == self.location:
-            self.smart_map = False
         #if there are more than 1 open directions to choose, pick one at random
         if np.count_nonzero(self.sensors) > 1:
             #If robot was in a dead end corridor at last location, it is now out. Set self.dead_end to false.
@@ -424,18 +459,16 @@ class Robot(object):
             no_dead_ends,open_cells = self.dead_ends()
             #If there's more than one choice, choose the direction with the least mapped number of walls.
             #If they're equal and the goal door hasn't been found yet, pick the closest to the goal door.
-            
             if len(no_dead_ends) > 1:
                 oc = []
                 [heapq.heappush(oc, (len(self.maze_map[o]), o)) for o in open_cells]
-                #if oc[0][0] == oc[1][0]:    #If the first two elements in the open cells list are equally mapped 
                 if not self.goal:                            #If goal door location not found yet
-                    if oc[0][0] < 4 and oc[0][1] < 4:        #If the two cells haven't been visited yet
+                    if oc[0][0] < 4 and oc[1][0] < 4:        #If the two cells haven't been visited yet
                         gq = []                              #Find the closest goal cell to the current location
                         [heapq.heappush(gq, (self.heuristic(g, self.location),g)) for g in self.goals]
                         goal = heapq.heappop(gq)
-                        first = self.heuristic(goal,oc[0][1])    #Get distances between open cells and goal
-                        second = self.heuristic(goal,oc[1][1])
+                        first = self.heuristic(goal[1],oc[0][1])    #Get distances between open cells and goal
+                        second = self.heuristic(goal[1],oc[1][1])
                         if first < second:                       #Choose the one closest to the goal or
                             next_cell = oc[0][1]                 #pick one from the preferred heading list
                         elif first > second:
@@ -462,66 +495,9 @@ class Robot(object):
                 next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
                 rotation = dir_rotation[self.heading][next_heading]
                 movement = 1
-            else:
-                rotation = rotation_index[no_dead_ends[0]]
-                movement = 1
                 
-        #If there's only 1 direction to move, just move there. This is also used to help indentify dead-end
-        #corridors.
-        elif np.count_nonzero(self.sensors) == 1:
-            if self.dead_end:
-                self.dead_end_set.add(self.location)
-            rot_ind = np.flatnonzero(self.sensors).item()
-            rotation = rotation_index[rot_ind]
-            movement = 1
-        else:
-            movement = 0
-            rotation = 1
-            #If sensors all read 0 and not back at start, robot is in a dead end
-            if self.location != self.start:
-                self.dead_end = True
-                self.dead_end_set.add(self.location)
-        
-        #This is to prevent the robot from continuing to explore the goal room once it's found.
-        if self.goal and (self.location == self.goal_door_location):
-            movement = -1
-            rotation = 0
-            self.dead_end = True
-            self.dead_end_set.add(self.location)
-            
-        return rotation,movement
-    
-    def smart_map_explore2(self):
-        if self.smart_map and self.find_cell == self.location:
-            self.smart_map = False
-        #if there are more than 1 open directions to choose, pick one at random
-        if np.count_nonzero(self.sensors) > 1:
-            #If robot was in a dead end corridor at last location, it is now out. Set self.dead_end to false.
-            if self.dead_end:
-                self.dead_end = False
-            #Check if any available openings lead to dead end and return those that aren't
-            no_dead_ends,open_cells = self.dead_ends()
-            
-            #If there's more than one choice, choose the right direction or the one that's not left
-            #until right wall is reached.
-            #Once the right wall has been found, choose the direction to up, or not down, until mid map is reached.
-            #In up preference, once mid map reached, choose left, or not right, until goal door found or 2 cells
-            #past mid-map.
-            #If goal not reached once past mid map, if in lower left quadrant, choose up until past mid map. If
-            #in upper left quadrant, choose down until past mid map.
-            #Then choose right, then up or down similarly, until goal is reached
-            
-            if len(no_dead_ends) > 1:
-                oc = []
-                [heapq.heappush(oc, (len(self.maze_map[o]), o)) for o in open_cells]
-                h1 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[0][1],self.location)][0]
-                h2 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[1][1],self.location)][0]
-                h3 = self.pref_heading[min(self.pref_heading.index(h1),self.pref_heading.index(h2))]
-                next_cell = oc[0][1] if h3 == h1 else oc[1][1]
-                    
-                next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
-                rotation = dir_rotation[self.heading][next_heading]
-                movement = 1
+                #if self.location == (10,2):
+                #    print first, second,h1,h2,h3,next_cell,next_heading,rotation
             else:
                 rotation = rotation_index[no_dead_ends[0]]
                 movement = 1
@@ -826,21 +802,3 @@ class Robot(object):
             self.print_grid(rmap)
         #return rmap
     
-    #Function visualize value and policy dictionaries in D* Lite
-    def print_map2(self,vmap):
-        grids = {'u':{},'r':{},'d':{},'l':{}}
-        for orientation in grids:
-            for i in range(self.maze_dim):
-                for j in range(self.maze_dim):
-                    grids[orientation][(i,j)] = vmap[(i,j)][orientation]
-    
-        for orientation in grids:
-            print orientation
-            gridmap = []
-            for j in reversed(range(maze_dim)):
-                gridrow = []
-                for i in range(maze_dim):
-                    gridrow.append(grids[orientation].get((i,j)))
-                gridmap.append(gridrow)
-            for i in range(len(gridmap)):
-                print '[%s]'%' '.join(map(str,[format(el,'^2') for el in gridmap[i]]))
