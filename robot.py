@@ -41,7 +41,12 @@ class Robot(object):
         self.planning = False     #Flag to allow a_star_search to run prior to second run
         self.goal = False         #Flag to indicate that the goal door was found
         self.mapped = False       #Flag to indicate that the maze has been fully explored
-        self.smart_map = False   #Flag to indicate smart map mode
+        self.smart_map = False    #Flag to indicate smart map mode
+        self.quad_list = [True,False,False,False]    #List of quadrants visited: [1,2,3,4].
+        self.top_wall = False     #Flag to indicate top wall boundary has been reached
+        self.right_wall = False   #Flag to indicate right wall boundary has been reached
+        self.left_wall = False   #Flag to indicate robot has returned to left boundary
+        self.pref_heading = []    #Heading preference list for smart mapping strategy
         self.rotate_cost = 2
         self.no_rotate_cost = 1
         self.goal_bounds = [self.maze_dim/2 - 1, self.maze_dim/2]
@@ -51,6 +56,7 @@ class Robot(object):
                 self.goals.append((i,j))
         self.goal_door_location = None
         self.maze_map = {}
+        self.count_map = {}
         self.init_maze_map() #Initialize the maze_map with the each cell as a key
                              # and the outer wall values.
         '''{(0, 0): {'d': 0, 'l': 0, 'r': 0, 'u': 11},
@@ -119,26 +125,34 @@ class Robot(object):
             #Update the maze map with the current position
             #self.update_maze_map1()
             self.update_maze_map2()
-            self.is_mapped(80)
+            self.update_count_map()
+            self.is_mapped()
             #rotation,movement = self.random_explore()
             #rotation,movement = self.avoid_dead_ends_explore()
-            rotation,movement = self.smart_map_explore1()
-            #rotation,movement = self.smart_map_explore2()
+            #rotation,movement = self.smart_map_explore1()
+            rotation,movement = self.smart_map_explore2()
             self.update_position(rotation,movement)
             if self.location == self.goal_door_location:
                 self.print_map1(self.maze_map)
                 print '\nFound Goal in {} moves.'.format(self.steps)
                 print 'Percent of cell walls mapped is {:.0%}.'.format(self.is_mapped())
+            if self.steps == 999:
+                print '\nNumber of walls mapped per cell:'
+                self.print_map1(self.maze_map)
+                print '\nPercent of cell walls mapped is {:.0%}.'.format(self.is_mapped())
+                #print '\nNumber of times each cell visited:'
+                #self.print_map1(self.count_map)
+            
             return rotation*90,movement
 
 #********************************************************************************************************
-#********************************************************************************************************
 
+#********************************************************************************************************
 ### Function used during the second run to exploit the mapped maze to find the fastest path to the goal
 ###
 
     def exploit(self):
-        #To begin relocate robot to start, heading up and compute the best route to goal_door
+        #To begin relocate robot to start, (0,0), with heading up and compute the best route to goal_door
         if self.planning:
             self.location = self.start
             self.heading = 'u'
@@ -149,8 +163,8 @@ class Robot(object):
             self.action_list = []
             self.action_list.append('S')
             self.planning = False
-            print len(self.goal_route)
-            print self.goal_route
+            #print len(self.goal_route)
+            #print self.goal_route
         
         #Look through each set of three steps in goal_route from current location to see how many of them are in
         #the same direction. This number will be the movement.
@@ -255,6 +269,7 @@ class Robot(object):
         #if goal_door hasn't been found yet, check if this new position is the goal_door
         if not self.goal:
             self.goal_door_location = self.goal_door()
+        self.map_strategy()
     
     #For random exploration mapping that doesn't update any map cell that hasn't been visited by robot
     def update_maze_map1(self):
@@ -296,6 +311,15 @@ class Robot(object):
                 next_cell3 = tuple(map(add,self.location,dir_move[h]))
                 if next_cell3 in self.maze_map:
                     self.maze_map[next_cell3].setdefault(dir_reverse[h],0)
+        if self.location[0] == self.maze_dim:
+            self.top_wall == True
+        if self.location[1] == self.maze_dim:
+            self.right_wall == True
+        if self.right_wall and self.top_wall and self.location[0] == 0:
+            self.left_wall == True
+    
+    def update_count_map(self):
+        self.count_map[self.location] = self.count_map.get(self.location,0) + 1
     
     #Function to check for cells that don't lead to a dead end
     def dead_ends(self):
@@ -312,6 +336,22 @@ class Robot(object):
                 no_dead_ends.append(dir_sensors[self.heading].index(i))
                 open_cells.append(tuple(neighbor_cells))
         return no_dead_ends,open_cells
+    
+    def map_strategy(self):
+        #Create a strategy for choosing which of mulitple available cells to move into based on moving
+        #counter-clockwise around the grid and reaching the boundaries.
+        #if in quadrant 1 or 2 (lower half of maze) and right wall hasn't been reached:
+        if self.location[1] <= self.maze_dim/2:
+            self.pref_heading = ['r','d','u','l']
+        #if in quadrant 2 or 3 (right half of maze) and right wall has been reached:
+        elif self.location[0] > self.maze_dim/2 and self.right_wall:
+            self.pref_heading = ['u','l','r','d']
+        #if in quadrant 3 or 4 (top half of maze) and top wall has been reached:
+        elif self.location[1] > self.maze_dim/2 and self.top_wall:
+            self.pref_heading = ['l','u','d','r']
+        #if in quadrant 3 or 1 (left half of maze) and left wall has been reached:
+        elif self.location[1] <= self.maze_dim/2 and self.left_wall:
+            self.pref_heading = ['d','r','l','u']
     
     #Purely random mapping only to use as a baseline for the poorest possible performance
     def random_explore(self):
@@ -390,40 +430,34 @@ class Robot(object):
                 [heapq.heappush(oc, (len(self.maze_map[o]), o)) for o in open_cells]
                 #if oc[0][0] == oc[1][0]:    #If the first two elements in the open cells list are equally mapped 
                 if not self.goal:                            #If goal door location not found yet
-                    goal = random.choice(self.goals)         #Pick any cell in the goal room
-                    first = self.heuristic(goal,oc[0][1])    #Get distances between open cells and goal
-                    second = self.heuristic(goal,oc[1][1])
-                    if first < second:                       #Choose the one closest to the goal or
-                        next_cell = oc[0][1]                 #pick one at random
-                    elif first > second:
-                        next_cell = oc[1][1]
+                    if oc[0][0] < 4 and oc[0][1] < 4:        #If the two cells haven't been visited yet
+                        gq = []                              #Find the closest goal cell to the current location
+                        [heapq.heappush(gq, (self.heuristic(g, self.location),g)) for g in self.goals]
+                        goal = heapq.heappop(gq)
+                        first = self.heuristic(goal,oc[0][1])    #Get distances between open cells and goal
+                        second = self.heuristic(goal,oc[1][1])
+                        if first < second:                       #Choose the one closest to the goal or
+                            next_cell = oc[0][1]                 #pick one from the preferred heading list
+                        elif first > second:
+                            next_cell = oc[1][1]
+                        else:
+                            h1 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[0][1],self.location)][0]
+                            h2 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[1][1],self.location)][0]
+                            h3 = self.pref_heading[min(self.pref_heading.index(h1),self.pref_heading.index(h2))]
+                            next_cell = oc[0][1] if h3 == h1 else oc[1][1]
                     else:
-                        next_cell = random.choice(oc)[1]
-                elif self.smart_map:
-                    first = self.heuristic(self.find_cell,oc[0][1])
-                    second = self.heuristic(self.find_cell,oc[1][1])
-                    if first < second:                       #Choose the one closest to the goal or
-                        next_cell = oc[0][1]                 #pick one at random
-                    elif first > second:
-                        next_cell = oc[1][1]
-                    else:
-                        next_cell = random.choice(oc)[1]
+                        #Else move to the next cell in the preferred heading list
+                        h1 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[0][1],self.location)][0]
+                        h2 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[1][1],self.location)][0]
+                        h3 = self.pref_heading[min(self.pref_heading.index(h1),self.pref_heading.index(h2))]
+                        next_cell = oc[0][1] if h3 == h1 else oc[1][1]                  
+                
                 else:
-                    self.smart_map = True
-                    for cell in self.maze_map:
-                        if len(self.maze_map[cell]) < 1:
-                            self.find_cell = cell
-                    first = self.heuristic(self.find_cell,oc[0][1])
-                    second = self.heuristic(self.find_cell,oc[1][1])
-                    if first < second:                       #Choose the one closest to the goal or
-                        next_cell = oc[0][1]                 #pick one at random
-                    elif first > second:
-                        next_cell = oc[1][1]
-                    else:
-                        next_cell = random.choice(oc)[1]
-                        
-                #else:
-                #    next_cell = heapq.heappop(oc)[1]
+                    #Else move to the next cell in the preferred heading list
+                    h1 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[0][1],self.location)][0]
+                    h2 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[1][1],self.location)][0]
+                    h3 = self.pref_heading[min(self.pref_heading.index(h1),self.pref_heading.index(h2))]
+                    next_cell = oc[0][1] if h3 == h1 else oc[1][1]
                     
                 next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
                 rotation = dir_rotation[self.heading][next_heading]
@@ -480,42 +514,10 @@ class Robot(object):
             if len(no_dead_ends) > 1:
                 oc = []
                 [heapq.heappush(oc, (len(self.maze_map[o]), o)) for o in open_cells]
-                #if oc[0][0] == oc[1][0]:    #If the first two elements in the open cells list are equally mapped 
-                if not self.goal:                            #If goal door location not found yet
-                    goal = random.choice(self.goals)         #Pick any cell in the goal room
-                    first = self.heuristic(goal,oc[0][1])    #Get distances between open cells and goal
-                    second = self.heuristic(goal,oc[1][1])
-                    if first < second:                       #Choose the one closest to the goal or
-                        next_cell = oc[0][1]                 #pick one at random
-                    elif first > second:
-                        next_cell = oc[1][1]
-                    else:
-                        next_cell = random.choice(oc)[1]
-                elif self.smart_map:
-                    first = self.heuristic(self.find_cell,oc[0][1])
-                    second = self.heuristic(self.find_cell,oc[1][1])
-                    if first < second:                       #Choose the one closest to the goal or
-                        next_cell = oc[0][1]                 #pick one at random
-                    elif first > second:
-                        next_cell = oc[1][1]
-                    else:
-                        next_cell = random.choice(oc)[1]
-                else:
-                    self.smart_map = True
-                    for cell in self.maze_map:
-                        if len(self.maze_map[cell]) < 1:
-                            self.find_cell = cell
-                    first = self.heuristic(self.find_cell,oc[0][1])
-                    second = self.heuristic(self.find_cell,oc[1][1])
-                    if first < second:                       #Choose the one closest to the goal or
-                        next_cell = oc[0][1]                 #pick one at random
-                    elif first > second:
-                        next_cell = oc[1][1]
-                    else:
-                        next_cell = random.choice(oc)[1]
-                        
-                #else:
-                #    next_cell = heapq.heappop(oc)[1]
+                h1 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[0][1],self.location)][0]
+                h2 = [k for k,v in dir_move.iteritems() if v == map(sub,oc[1][1],self.location)][0]
+                h3 = self.pref_heading[min(self.pref_heading.index(h1),self.pref_heading.index(h2))]
+                next_cell = oc[0][1] if h3 == h1 else oc[1][1]
                     
                 next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
                 rotation = dir_rotation[self.heading][next_heading]
@@ -548,12 +550,7 @@ class Robot(object):
             self.dead_end_set.add(self.location)
             
         return rotation,movement
-    #Function to find goal door as quickly as possibly, then find pursue unexplored route back to start
-    def goal_seek_explore(self):
-        
-        
-        return rotation,movement
-
+    
 #********************************************************************************************************
 #********************************************************************************************************
 
