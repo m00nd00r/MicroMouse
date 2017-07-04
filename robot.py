@@ -461,18 +461,24 @@ class Robot(object):
                 self.dead_end = False
             #Check if any available openings lead to dead end and return those that aren't
             no_dead_ends,open_cells = self.dead_ends()
-            #If there's more than one choice, choose the direction with the least mapped number of walls.
+            #If there's more than one choice, choose the cell that has been least visited.
             #If they're equal and the goal door hasn't been found yet, pick the closest to the goal door.
+            #A secondary sorting based on how much of each cell has already been mapped will be applied as tie-
+            #breaker for the first.
+            #If the cells are still tied, then use the map_strategy.
             if len(open_cells) > 1:
                 #Create a new priority queue ranking the available cells according to number of visits
-                oc = []
-                [heapq.heappush(oc, (self.count_map[o], o)) for o in open_cells]
+                oc1 = []
+                [heapq.heappush(oc1, (self.count_map[o], o)) for o in open_cells]
+                #Create another priority queue ranking the cells according to least walls mapped for breaking ties
+                oc2 = []
+                [heapq.heappush(oc2, (len(self.maze_map[o]), o)) for o in open_cells]
                 if not self.goal:                        #If goal door location not found yet
                     gq1 = []
                     gq2 = []                             #Find the closest goal cell to the current location
                     [heapq.heappush(gq1, (self.heuristic(g, self.location),g)) for g in self.goals]
                     goal = heapq.heappop(gq1)[1]
-                    [heapq.heappush(gq2, (self.heuristic(goal,cell),cell)) for cell in oc]
+                    [heapq.heappush(gq2, (self.heuristic(goal,cell),cell)) for cell in oc1]
                     if gq2[0][0] < gq2[1][0]:            #Choose the one closest to the goal or 
                         next_cell = gq2[0][1]            #pick one from the preferred heading list
                         #print '1'
@@ -481,11 +487,13 @@ class Robot(object):
                             gq2.pop(-1)                  #Remove it from the list
                         if gq2[0][0] < gq2[1][0]:        #If the second item is further than the first,
                             gq2.pop(-1)                  #Remove it from the list
-                            next_cell = gq2[1]           #Move to this cell
+                            next_cell = gq2[0][1]        #Then move to the remaining cell
                             #print '2'
-                    else:                                #Otherwise there are 2 or 3 cells all equidistant from the goal, 
-                        hq = []                          #so choose one based on the preferred heading list instead.
-                        #for o in oc:
+                    elif gq2[0][0] == gq2[2][0] and oc2[0][0] < oc2[1][0]:
+                        next_cell = oc2[0][1]            #Otherwise if they're all equal, choose the one least mapped.
+                    else:                          
+                        hq = []                          #Otherwise there are 2 or 3 cells all equidistant from the goal
+                        #for o in oc:                    #that are equally mapped, so choose one based on preferred heading.
                         #    for k,v in dir_move.iteritems():
                         #        if v == map(sub,o[1],self.location):
                         #            heapq.heappush(hq,(self.pref_heading.index(k),o))
@@ -493,67 +501,28 @@ class Robot(object):
                          if v == map(sub,o[1],self.location)]
                         next_cell = heapq.heappop(hq)[1]
                         #print '3'
-                else:
-                    if oc[0][0] < oc[1][0]:              #Choose the one least visited or 
-                        next_cell = oc[0][1]             #pick one from the preferred heading list
-                        #print '1' 
+                else:                                    #Once the goal has been found
+                    if oc1[0][0] < oc1[1][0]:            #Choose the next cell that was least visited or 
+                        next_cell = oc1[0][1]            #pick one from the preferred heading list
+                        #print '4' 
                     elif len(oc) == 3: 
-                        if oc[0][0] < oc[2][0]:          #If the third cell is larger than the first,
+                        if oc1[0][0] < oc1[2][0]:        #If the third cell is larger than the first,
                             oc.pop(-1)                   #Remove it from the list
-                        if oc[0][0] < oc[1][0]:          #If the second item is larger than the first,
-                            oc.pop(-1)                   #Remove it from the list
-                            next_cell = oc[1]            #Move to this cell
-                            #print '2'
+                        if oc1[0][0] < oc1[1][0]:        #If the second item is larger than the first,
+                            oc1.pop(-1)                  #Remove it from the list
+                            next_cell = oc1[1]           #Move to this cell
+                    elif oc1[0][0] == oc1[2][0] and oc2[0][0] < oc2[1][0]:
+                        next_cell = oc2[0][1]            #Otherwise if they're all equal, choose the one least mapped.
+                            #print '5'
                     else:                                #Otherwise there are 2 or 3 cells all equally visited, 
                         hq = []                          #so choose one based on the preferred heading list instead.
-                        #for o in oc:
-                        #    for k,v in dir_move.iteritems():
-                        #        if v == map(sub,o[1],self.location):
-                        #            heapq.heappush(hq,(self.pref_heading.index(k),o))
-                        [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in oc for k,v in dir_move.iteritems() \
+                        [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in oc1 for k,v in dir_move.iteritems() \
                          if v == map(sub,o[1],self.location)]
                         next_cell = heapq.heappop(hq)[1]
-                        #print '3'
-                    #elif len(oc) == 1:
-                    #    next_cell = oc[0]
-                    #    #print '10'
-                    #else:
-                    #    #Create a priority queue ranking according to number of visits
-                    #    oc2 = []
-                    #    [heapq.heappush(oc2, (self.count_map[o], o)) for o in open_cells]
-                    #    #If both cells visited equal number of times, reverse direction
-                    #    if len(oc2) == 2:
-                    #        if oc2[0][0] == oc2[1][0]:
-                    #            hq = []
-                    #            for o in oc2:
-                    #                for k,v in dir_move.iteritems():
-                    #                    if v == map(sub,o[1],self.location):
-                    #                        heapq.heappush(hq,(self.pref_heading.index(k),o[1]))
-                    #            next_cell = heapq.heappop(hq)[1]
-                    #            #print '11'
-                    #        else:
-                    #            next_cell = heapq.heappop(oc2)[1]
-                    #            #print '12'
-                    #    else:
-                    #        if oc2[0][0] == oc2[1][0] or oc2[0][0] == oc2[2][0]:
-                    #            hq = []
-                    #            for o in oc2:
-                    #                for k,v in dir_move.iteritems():
-                    #                    if v == map(sub,o[1],self.location):
-                    #                        heapq.heappush(hq,(self.pref_heading.index(k),o[1]))
-                    #            next_cell = heapq.heappop(hq)[1]
-                    #            #print '13'
-                    #        else:
-                    #            next_cell = heapq.heappop(oc2)[1]
-                    #            #print '14'
-                        
-                #print next_cell        
                 next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
                 rotation = dir_rotation[self.heading][next_heading]
                 movement = 1
                 
-                #if self.location == (1,10):
-                #    print h1,h2,h3,next_cell,next_heading,rotation
             else:
                 rotation = rotation_index[no_dead_ends[0]]
                 movement = 1
