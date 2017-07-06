@@ -133,14 +133,15 @@ class Robot(object):
             self.print_map3(self.count_map)
             print '\nTotal number of loops entered is {}.'.format(self.loop_count)
             print 'Total times Preferred Heading used {}.'.format(self.pref_head_count)
-            print 'Rotate count is {}\n'.format(self.rotate_count)
+            print 'Rotate count is {}'.format(self.rotate_count)
+            print 'Self.mapped = {}.\n'.format(self.mapped)
             return rotation,movement
         else:
             #Update the maze map with the current position
             #self.update_maze_map1()
             self.update_maze_map2()
             self.update_count_map()
-            self.is_mapped(80)
+            self.is_mapped(81)
             #rotation,movement = self.random_explore()
             #rotation,movement = self.avoid_dead_ends_explore()
             rotation,movement = self.smart_map_explore1()
@@ -252,11 +253,12 @@ class Robot(object):
         
         walls = []
         #Loop through maze_map and count number of walls that have been mapped
-        for i in self.maze_map:
+        for i in self.maze_map.keys():
             walls.append(len(self.maze_map[i]))
         wallnum = float(sum(walls))
-        #If they've all been mapped to level, set mapped to True
-        if wallnum == (level/100)*4*(self.maze_dim**2):
+        threshold = (float(level)/100)*4*(self.maze_dim**2)
+        #If they've all been mapped to threshold, set mapped to True
+        if wallnum >= threshold:
             self.mapped = True
         #Track percentage of walls mapped to help in analysis
         #Want to determine minimum percentage of map necessary to achieve best scores
@@ -353,11 +355,23 @@ class Robot(object):
         #Keep track of which quadrant the robot is in.
         if self.location[0] < self.maze_dim/2 and self.location[1] < self.maze_dim/2:
             self.quad1 = True
+            self.quad2 = False
+            self.quad3 = False
+            self.quad4 = False
         elif self.location[0] >= self.maze_dim/2 and self.location[1] < self.maze_dim/2:
+            self.quad1 = False
             self.quad2 = True
+            self.quad3 = False
+            self.quad4 = False
         elif self.location[0] >= self.maze_dim/2 and self.location[1] >= self.maze_dim/2:
+            self.quad1 = False
+            self.quad2 = False
             self.quad3 = True
+            self.quad4 = False
         elif self.location[0] < self.maze_dim/2 and self.location[1] >= self.maze_dim/2:
+            self.quad1 = False
+            self.quad2 = False
+            self.quad3 = False
             self.quad4 = True
         
         self.map_strategy()
@@ -456,20 +470,20 @@ class Robot(object):
             
         if not self.goal:
             if self.quad1:
-                self.pref_heading = ['r','u','d','l']
+                self.pref_heading = ['r','d','u','l']
             elif self.quad2:
-                self.pref_heading = ['u','r','l','d']
+                self.pref_heading = ['r','u','d','l']
             elif self.quad3:
                 self.pref_heading = ['d','l','r','u']
             elif self.quad4:
                 self.pref_heading = ['r','d','u','l']
         else:
             if self.quad1:
-                self.pref_heading = ['r','d','u','l']
+                self.pref_heading = ['r','u','d','l']
             elif self.quad2:
-                self.pref_heading = ['d','r','l','u']
+                self.pref_heading = ['r','d','u','l']
             elif self.quad3:
-                self.pref_heading = ['u','r','l','d']
+                self.pref_heading = ['u','l','r','d']
             elif self.quad4:
                 self.pref_heading = ['l','u','d','r']
                 
@@ -701,17 +715,24 @@ class Robot(object):
         '''This exploring function is meant to employ the faster mapping function as well as improved
            mapping strategy that will try to get to the goal as quickly as possible, then continue
            mapping until a mapping threshold is met, or until the reset threshold is met.'''
-            
-        '''This alternative to the first iteration will implement an open cell search strategy to decide which way to go
-           when confronted with 2 or more cells that have already been visited.'''
         
-        #if there are more than 1 open directions to choose, pick one at random
+        #To prevent getting caught in loops, keep a tally of the sum of the rotations.
+        #If the sum rises above 4 or below -4, the robot has come full circle.
+        #The next time it can choose a different direction it needs to choose the one that maintains
+        #or reduces the rotate count.
+        #if abs(self.rotate_count) >= 4:
+        #    self.loop = True
+        #    self.loop_count += 1
+        
+        next_cell = []
+            
         if np.count_nonzero(self.sensors) > 1:
             #If robot was in a dead end corridor at last location, it is now out. Set self.dead_end to false.
             if self.dead_end:
                 self.dead_end = False
             #Check if any available openings lead to dead end and return those that aren't
             no_dead_ends,open_cells = self.dead_ends()
+            
             #If there's more than one choice, choose the cell that has been least visited.
             #If they're equal and the goal door hasn't been found yet, pick the closest to the goal door.
             #A secondary sorting based on how much of each cell has already been mapped will be applied as tie-
@@ -724,52 +745,68 @@ class Robot(object):
                 #Create another priority queue ranking the cells according to least walls mapped for breaking ties
                 oc2 = []
                 [heapq.heappush(oc2, (len(self.maze_map[o]), o)) for o in open_cells]
+                
+                #If self.loop is True, robot should chose the cell that reduces or doesn't change rotate_count.
                 if not self.goal:                        #If goal door location not found yet
                     gq1 = []
                     gq2 = []                             #Find the closest goal cell to the current location
                     [heapq.heappush(gq1, (self.heuristic(g, self.location),g)) for g in self.goals]
                     goal = heapq.heappop(gq1)[1]
-                    [heapq.heappush(gq2, (self.heuristic(goal,cell),cell)) for cell in oc1]
-                    if gq2[0][0] < gq2[1][0]:            #Choose the one closest to the goal or 
-                        next_cell = gq2[0][1]            #pick one from the preferred heading list
+                    [heapq.heappush(gq2, (self.heuristic(goal,cell[1]),cell[1])) for cell in oc1]
+                    
+                    if oc2[0][0] < oc2[1][0]:            #First preference is for least mapped.
+                        next_cell = oc2[0][1]
                         #print '1'
-                    elif len(gq2) == 3:
-                        if gq2[0][0] < gq2[2][0]:        #If the third cell is further than the first,
-                            gq2.pop(-1)                  #Remove it from the list
-                        if gq2[0][0] < gq2[1][0]:        #If the second item is further than the first,
-                            gq2.pop(-1)                  #Remove it from the list
-                            next_cell = gq2[0][1]        #Then move to the remaining cell
-                            #print '2'
-                    elif gq2[0][0] == gq2[2][0] and oc2[0][0] < oc2[1][0]:
-                        next_cell = oc2[0][1]            #Otherwise if they're all equal, choose the one least mapped.
-                    else:                          
-                        hq = []                          #Otherwise there are 2 or 3 cells all equidistant from the goal
-                        #for o in oc:                    #that are equally mapped, so choose one based on preferred heading.
+                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
+                        next_cell = gq2[0][1]            
+                        #print '2'
+                    elif oc1[0][0] < oc1[1][0]:          #Otherwise if they're all equally mapped and the same distance
+                        next_cell = oc1[0][1]            #from the goal, choose the one least visited.
+                        #print '3'
+                    else:
+                        if len(gq2) == 3 and gq2[0][0] < gq2[2][0]:                  
+                            gq2.pop(-1)                  #If none of the above are true and there are 3 cells to choose from
+                                                         #If the third cell is further than the first and second cells,
+                                                         #Remove it from the list
+                                                         #If there are 2 or 3 cells all equidistant from the goal,
+                        hq = []                          #that are all equally visited and that are equally mapped,
+                        #for o in oc:                    #so choose one based on preferred heading.
                         #    for k,v in dir_move.iteritems():
                         #        if v == map(sub,o[1],self.location):
                         #            heapq.heappush(hq,(self.pref_heading.index(k),o))
                         [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in gq2 for k,v in dir_move.iteritems() \
                          if v == map(sub,o[1],self.location)]
                         next_cell = heapq.heappop(hq)[1]
-                        #print '3'
-                else:                                    #Once the goal has been found
-                    if oc1[0][0] < oc1[1][0]:            #Choose the next cell that was least visited or 
-                        next_cell = oc1[0][1]            #pick one from the preferred heading list
-                        #print '4' 
-                    elif len(oc) == 3: 
-                        if oc1[0][0] < oc1[2][0]:        #If the third cell is larger than the first,
-                            oc.pop(-1)                   #Remove it from the list
-                        if oc1[0][0] < oc1[1][0]:        #If the second item is larger than the first,
-                            oc1.pop(-1)                  #Remove it from the list
-                            next_cell = oc1[1]           #Move to this cell
-                    elif oc1[0][0] == oc1[2][0] and oc2[0][0] < oc2[1][0]:
-                        next_cell = oc2[0][1]            #Otherwise if they're all equal, choose the one least mapped.
-                            #print '5'
-                    else:                                #Otherwise there are 2 or 3 cells all equally visited, 
+                        self.pref_head_count += 1
+                        #print '4'            
+                    #print '3' 
+                    #elif self.loop:
+                    #    for oc in open_cells:
+                    #        next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,oc,self.location)][0]
+                    #        rotation = dir_rotation[self.heading][next_heading]
+                    #        rq = []
+                    #        heapq.heappush(rq,((self.rotate_count + rotation),oc))
+                    #        next_cell = heapq.heappop(rq)[1]
+                    #        self.loop = False
+                else:
+                    if oc2[0][0] < oc2[1][0]:            #First, choose the one least mapped,
+                        next_cell = oc2[0][1]          
+                        #print '6'
+                    elif oc1[0][0] < oc1[1][0]:          #If all mapped, choose the next cell that was least visited
+                        next_cell = oc1[0][1]            
+                        #print '5' 
+                    else:
+                        if len(oc1) == 3 and oc1[0][0] < oc1[2][0]:                   
+                            oc1.pop(-1)                  #If the first two cells were visited equally and there are 3 to choose from
+                                                         #If the third cell is larger than the first,
+                                                         #Remove it from the list
+                                                         #Otherwise there are 2 or 3 cells all equally visited and mapped, 
                         hq = []                          #so choose one based on the preferred heading list instead.
                         [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in oc1 for k,v in dir_move.iteritems() \
                          if v == map(sub,o[1],self.location)]
                         next_cell = heapq.heappop(hq)[1]
+                        self.pref_head_count += 1
+                        #print '7'
                 next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
                 rotation = dir_rotation[self.heading][next_heading]
                 movement = 1
@@ -800,6 +837,13 @@ class Robot(object):
             rotation = 0
             self.dead_end = True
             self.dead_end_set.add(self.location)
+            
+        #As for the goal mark the corridor coming out of the start as a dead end as well.
+        if self.location == self.start:
+            self.dead_end = True
+            self.dead_end_set.add(self.location)
+        
+        self.rotate_count += rotation
         
         return rotation,movement
     
@@ -874,7 +918,7 @@ class Robot(object):
 ### NOTE: This implementation of A* search was adapted from Amit Patel's Red Blob Games website: http://www.redblobgames.com/
 ###
 
-    def a_star_search1(self, start, goal):
+    def a_star_search1(self, start, target):
         open = []
         heapq.heappush(open, (0, start))
         came_from = {}
@@ -894,12 +938,12 @@ class Robot(object):
         while not found and not resign:
             if len(open) == 0:
                 resign = True
-                print "Failed to find route to goal."
+                print "Failed to find route to target."
             else:
                 count += 1
                 current = heapq.heappop(open)[1]
                 
-                if current == goal:
+                if current == target:
                     found = True
                 #else:
                 elif current in self.maze_map:
@@ -915,19 +959,19 @@ class Robot(object):
                         #if next not in cost_so_far or new_cost < cost_so_far[next]:
                         if move_cost < cost_so_far.get(next_cell, float("inf")):
                             cost_so_far[next_cell] = move_cost
-                            priority = move_cost + self.heuristic(goal, next_cell)
+                            priority = move_cost + self.heuristic(target, next_cell)
                             heapq.heappush(open,(priority, next_cell))
                             came_from[next_cell] = current
         
         #Once costs have all been calculated, we can now unpack the path to get from S to G
-        current1 = goal
+        current1 = target
         path = [current1]
         while current1 != start:
             current1 = came_from[current1]
             path.append(current1)
         path.reverse()
         
-        return path
+        return resign,path
 
 #This second implementation of A* Search runs in reverse, from goal to start, of the first implementation above.
 #This allows for a route to be planned without actually waiting for the exact location of the goal entrance
@@ -984,7 +1028,6 @@ class Robot(object):
         while current1 not in self.goals:
             current1 = came_from[current1]
             path.append(current1)
-        
         return path
     
     def d_star_lite_search(self):
