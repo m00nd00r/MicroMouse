@@ -115,17 +115,19 @@ def main(argv1, argv2 = None):
                     runtimes.append(total_time - sum(runtimes))
                     run_active = False
                     print "Goal found; run {} completed!".format(run)
+        
+    score = runtimes[1] + train_score_mult*runtimes[0]
 
     # Report score if robot is successful.
     if len(runtimes) == 2:
-        print "Task complete! Score: {:4.3f}".format(runtimes[1] + train_score_mult*runtimes[0])
-        
-    score = runtimes[1] + train_score_mult*runtimes[0]
+        print "Task complete! Score: {:4.3f}".format(score)
     
     # If 'showroute' was sent as an argument in the execution command, retrieve the route map from robot
     if showroute:
         #testroute = testrobot.rmap
         showmaze_1.run(argv1,testrobot.rmap)
+        
+    return score
         
 if __name__ == "__main__":
     

@@ -45,6 +45,7 @@ class Robot(object):
         self.mapped = False       #Flag to indicate that the maze has been fully explored
         self.quad_list = [True,False,False,False]    #List of quadrants visited: [1,2,3,4].
         self.loop = False         #Flag to indicate whether robot is in a loop
+        self.testing = False
         
         self.pref_heading = []    #Heading preference list for smart mapping strategy
         self.rotate_cost = 2
@@ -60,10 +61,10 @@ class Robot(object):
             for j in range(maze_dim/2 - 1, maze_dim/2 + 1):
                 self.goals.append((i,j))
         
+        self.cost_so_far = {}
         self.maze_map = {}
         self.count_map = {}
         self.rmap = {}
-        self.open_map = {}
         self.init_maps()     #Initialize the maze_map with the each cell as a key
                              # and the outer wall values.
         '''{(0, 0): {'d': 0, 'l': 0, 'r': 0, 'u': 11},
@@ -126,6 +127,15 @@ class Robot(object):
             self.controller = self.smart_map_explore1
             print 'Maze map strategy used is smart map.\n'
             
+        try:
+            test_report = os.environ['TEST_REPORT']
+        except:
+            test_report = ''
+        if test_report == 'True':
+            self.testing = True
+        else:
+            self.testing = False
+            
     def next_move(self, sensors):
         '''
         Use this function to determine the next move the robot should make,
@@ -170,20 +180,9 @@ class Robot(object):
             self.planning = True
             rotation,movement = ('Reset','Reset')
             self.exploring = False
-            print '\nFound Goal in {} moves.'.format(self.steps)
-            print 'Percent of cell walls mapped until goal found is {:.0%}.'.format(self.is_mapped())
-            self.steps_to_goal = self.steps
-            print '\nNumber of walls mapped per cell:'
-            self.print_map1(self.maze_map)
-            print '\nPercent of total walls mapped during explore is {:.0%}.'.format(self.is_mapped())
-            print 'Total number of moves for 1st run is {}.'.format(self.steps_to_goal)
-            print '\nNumber of times each cell visited:'
-            self.print_map3(self.count_map)
-            print '\n'
-            #print '\nTotal number of loops entered is {}.'.format(self.loop_count)
-            #print 'Total times Preferred Heading used {}.'.format(self.pref_head_count)
-            #print 'Rotate count is {}'.format(self.rotate_count)
-            #print 'Self.mapped = {}.\n'.format(self.mapped)
+            if self.testing:
+                self.reporting('exploring')
+            
             return rotation,movement
         else:
             rotation,movement = self.controller()
@@ -191,14 +190,8 @@ class Robot(object):
             self.is_mapped(self.coverage_reset_threshold)
             
             #In case algorithm fails to find the goal, get some data back.
-            if self.steps == 998:
-                print '\nNumber of walls mapped per cell:'
-                #self.print_map1(self.maze_map)
-                print '\nNumber of times each cell visited:'
-                self.print_map3(self.count_map)
-                print '\nTotal number of loops entered is {}.'.format(self.loop_count)
-                print 'Total times Preferred Heading used {}.'.format(self.pref_head_count)
-                print 'Rotate count is {}\n'.format(self.rotate_count)
+            if self.steps == 998 and self.testing:
+                self.reporting('fail')
                 
             return rotation*90,movement
 
@@ -225,39 +218,14 @@ class Robot(object):
             #print len(self.goal_route)
             #print self.goal_route
         
-        #Look through each set of three steps in goal_route from current location to see how many of them are in
-        #the same direction. This number will be the movement.
-        movement = 0
-        heading = [self.heading] #Initialize list with current heading to compare to the next three headings in goal_route
-        if self.location != self.goal_door_location:
-            for step in range(3):
-                #Return the heading key in dir_move whose value is equal to the difference between each pair of successive
-                #map locations in goal_route
-                heading.append([k for k,v in dir_move.iteritems() \
-                        if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
-                #heading now contains the next 3 turns. Increment through the list, for each one that is that same as
-                #the current heading, add 1 to movement
-                if heading[step] == heading[step+1]:
-                    movement += 1
-                else:
-                    break
-            if movement > 1: 
-                rotation = 0
-            else: 
-                movement = 1
-                rotation = dir_rotation[heading[0]][heading[1]]
-            
-            self.update_position(rotation,movement)   
-            self.count += 1
-            self.index += movement
-            
+        #Get next rotation and movement values.
+        rotation,movement = self.route_plan()
+        
         #Update route_map of rotations and movements for display
         self.route_map(rotation,movement)
         
-        if self.location == self.goal_door_location:
-            print '\nTotal length of route is {} grid cells.'.format(len(self.goal_route))
-            print 'Total movements to goal = {}.'.format(self.count)
-            print 'Total compute time is {:.4} seconds.'.format(time.clock() - self.start_time)
+        if self.location == self.goal_door_location and self.testing:
+            self.reporting('success')
             
         return rotation*90,movement
     
@@ -267,7 +235,39 @@ class Robot(object):
 
 ### 
 ###
-
+    def reporting(self, report):
+        if report == 'exploring':
+            print '\nFound Goal in {} moves.'.format(self.steps)
+            print 'Percent of cell walls mapped until goal found is {:.0%}.'.format(self.is_mapped())
+            self.steps_to_goal = self.steps
+            print '\nNumber of walls mapped per cell:'
+            self.print_map1(self.maze_map)
+            print '\nPercent of total walls mapped during explore is {:.0%}.'.format(self.is_mapped())
+            print 'Total number of moves for 1st run is {}.'.format(self.steps_to_goal)
+            print '\nNumber of times each cell visited:'
+            self.print_map3(self.count_map)
+            print '\n'
+            #print '\nTotal number of loops entered is {}.'.format(self.loop_count)
+            #print 'Total times Preferred Heading used {}.'.format(self.pref_head_count)
+            #print 'Rotate count is {}'.format(self.rotate_count)
+            #print 'Self.mapped = {}.\n'.format(self.mapped)
+        elif report == 'success':
+            print '\nRoute to goal:'
+            self.print_grid(self.rmap)
+            print '\nCost map:'        
+            self.print_map3(self.cost_so_far)
+            print '\nTotal length of route is {} grid cells.'.format(len(self.goal_route))
+            print 'Total movements to goal = {}.'.format(self.count)
+            print 'Total compute time is {:.4} seconds.'.format(time.clock() - self.start_time)
+        else:
+            print '\nNumber of walls mapped per cell:'
+            #self.print_map1(self.maze_map)
+            print '\nNumber of times each cell visited:'
+            self.print_map3(self.count_map)
+            print '\nTotal number of loops entered is {}.'.format(self.loop_count)
+            print 'Total times Preferred Heading used {}.'.format(self.pref_head_count)
+            print 'Rotate count is {}\n'.format(self.rotate_count)
+    
     def init_maps(self):
         '''Initialize the maze_map, the count_map, and the open_map.'''
         
@@ -275,7 +275,6 @@ class Robot(object):
             for j in range(self.maze_dim):
                 self.maze_map[(i,j)] = {}
                 self.count_map[(i,j)] = 0
-                #self.open_map.update((i,j))
                 if i == 0:
                     self.maze_map[(i,j)].update({'l':0})
                 if i == self.maze_dim-1:
@@ -934,10 +933,10 @@ class Robot(object):
         open = []
         heapq.heappush(open, (0, start))
         came_from = {}
-        cost_so_far = {}
+        #cost_so_far = {}
         came_from[start] = None      #Every key in came_from is a cell in the maze and 
                                      #has for its value the previous cell the robot was in.
-        cost_so_far[start] = 0  #Every key in cost_so_far is a cell in the maze and
+        self.cost_so_far[start] = 0  #Every key in cost_so_far is a cell in the maze and
                                      #has for its value the number of steps to get to that cell
                                      #from self.start (0,0) plus the cost of moving to this same
                                      #cell from the previous cell.
@@ -967,10 +966,10 @@ class Robot(object):
                         #to a neighbor requiring a rotation will be 2.
                         #To calculate the current heading to determine whether a turn is needed we need the
                         #previous cell from which the robot moved to the current cell. This can be found in came_from.
-                        move_cost = cost_so_far[current] + self.cost1(came_from[current],current, next_cell, start)
+                        move_cost = self.cost_so_far[current] + self.cost1(came_from[current],current, next_cell, start)
                         #if next not in cost_so_far or new_cost < cost_so_far[next]:
-                        if move_cost < cost_so_far.get(next_cell, float("inf")):
-                            cost_so_far[next_cell] = move_cost
+                        if move_cost < self.cost_so_far.get(next_cell, float("inf")):
+                            self.cost_so_far[next_cell] = move_cost
                             priority = move_cost + self.heuristic(target, next_cell)
                             heapq.heappush(open,(priority, next_cell))
                             came_from[next_cell] = current
@@ -984,8 +983,6 @@ class Robot(object):
             
         path.reverse()
         
-        self.print_map3(cost_so_far)
-        
         return path
 
 #This second implementation of A* Search runs in reverse, from goal to start, of the first implementation above.
@@ -994,12 +991,13 @@ class Robot(object):
     def a_star_search2(self):
         open = []
         came_from = {}
-        cost_so_far = {}
+        #cost_so_far = {}
         for i in self.goals:
             heapq.heappush(open, (0, i))
             came_from[i] = None           #Every key in came_from is a cell in the maze and 
                                           #has for its value the previous cell the robot was in.
-            cost_so_far[i] = 0            #Every key in cost_so_far is a cell in the maze and
+            self.cost_so_farcost_so_far[i] = 0            
+                                          #Every key in cost_so_far is a cell in the maze and
                                           #has for its value the number of steps to get to that cell
                                           #from self.start (0,0) plus the cost of moving to this same
                                           #cell from the previous cell.
@@ -1029,10 +1027,10 @@ class Robot(object):
                         #to a neighbor requiring a rotation will be 2.
                         #To calculate the current heading to determine whether a turn is needed we need the
                         #previous cell from which the robot moved to the current cell. This can be found in came_from.
-                        move_cost = cost_so_far[current] + self.cost2(came_from[current],current, next_cell)
+                        move_cost = self.cost_so_far[current] + self.cost2(came_from[current],current, next_cell)
                         #if next not in cost_so_far or new_cost < cost_so_far[next]:
-                        if move_cost < cost_so_far.get(next_cell, float("inf")):
-                            cost_so_far[next_cell] = move_cost
+                        if move_cost < self.cost_so_far.get(next_cell, float("inf")):
+                            self.cost_so_far[next_cell] = move_cost
                             priority = move_cost + self.heuristic(self.start, next_cell)
                             heapq.heappush(open,(priority, next_cell))
                             came_from[next_cell] = current
@@ -1043,8 +1041,6 @@ class Robot(object):
         while current1 not in self.goals:
             current1 = came_from[current1]
             path.append(current1)
-        #print came_from
-        self.print_map3(cost_so_far)
         
         return path
     
@@ -1136,7 +1132,36 @@ class Robot(object):
             self.action_list.append('G')
             for i in range(len(self.goal_route)):
                 self.rmap[self.goal_route[i]] = self.action_list[i]
-            print '\nRoute to goal:'
-            self.print_grid(self.rmap)
         #return rmap
+    
+    def route_plan(self):
+        '''Look through each set of three steps in goal_route from current location to see how many of them are in
+           the same direction. This number will be the movement.'''
+        
+        movement = 0
+        heading = [self.heading] #Initialize list with current heading to compare to the next three headings in goal_route
+        if self.location != self.goal_door_location:
+            for step in range(3):
+                #Return the heading key in dir_move whose value is equal to the difference between each pair of successive
+                #map locations in goal_route
+                heading.append([k for k,v in dir_move.iteritems() \
+                        if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
+                #heading now contains the next 3 turns. Increment through the list, for each one that is that same as
+                #the current heading, add 1 to movement
+                if heading[step] == heading[step+1]:
+                    movement += 1
+                else:
+                    break
+            if movement > 1: 
+                rotation = 0
+            else: 
+                movement = 1
+                rotation = dir_rotation[heading[0]][heading[1]]
+            
+            self.update_position(rotation,movement)   
+            self.count += 1
+            self.index += movement
+            
+            return rotation,movement
+    
     

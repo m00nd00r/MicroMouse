@@ -94,12 +94,6 @@ class Maze(object):
         return distance
     
     def make_map(self):
-        dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
-               'd': ['r', 'd', 'l'], 'l': ['d', 'l', 'u'],
-               'up': ['l', 'u', 'r'], 'right': ['u', 'r', 'd'],
-               'down': ['r', 'd', 'l'], 'left': ['d', 'l', 'u']}
-        dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
-               'up': 'd', 'right': 'l', 'down': 'u', 'left': 'r'}
         directions = ['u','r','d','l']
         maze_map = {}
         for i in range(len(self.walls)):
@@ -107,3 +101,19 @@ class Maze(object):
                 sensing = [self.dist_to_wall((i,j), heading) for heading in directions]
                 maze_map.setdefault((i,j), dict((heading,k) for heading,k in zip(directions,sensing)))
         return maze_map
+    
+    def goal_door(self, maze_map):
+        '''Function to determine whether the goal door has been found and what its location is.'''
+        
+        goal_bounds = [self.dim/2 - 1, self.dim/2]
+        
+        for i in goal_bounds:
+            for j in goal_bounds:
+                count = 0
+                for k,v in maze_map[(i,j)].iteritems():
+                    if v == 0:
+                        count += 1
+                if count == 1:
+                    goal_door_location = (i,j)
+                    
+        return goal_door_location
