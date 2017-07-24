@@ -17,7 +17,7 @@ dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
 max_time = 1000
 train_score_mult = 1/30.
 
-def main(argv1, argv2 = None):
+def main(argv1, argv2 = None, output = True):
     '''
     This script tests a robot based on the code in robot.py on a maze given
     as an argument when running the script.
@@ -39,7 +39,7 @@ def main(argv1, argv2 = None):
     runtimes = []
     total_time = 0
     for run in range(2):
-        print "Starting run {}.".format(run)
+        if output: print "Starting run {}.".format(run)
 
         # Set the robot in the start position. Note that robot position
         # parameters are independent of the robot itself.
@@ -52,7 +52,7 @@ def main(argv1, argv2 = None):
             total_time += 1
             if total_time > max_time:
                 run_active = False
-                print "Allotted time exceeded."
+                if output: print "Allotted time exceeded."
                 break
 
             # provide robot with sensor information, get actions
@@ -65,13 +65,13 @@ def main(argv1, argv2 = None):
                 if run == 0 and hit_goal:
                     run_active = False
                     runtimes.append(total_time)
-                    print "Ending first run. Starting next run."
+                    if output: print "Ending first run. Starting next run."
                     break
                 elif run == 0 and not hit_goal:
-                    print "Cannot reset - robot has not hit goal yet."
+                    if output: print "Cannot reset - robot has not hit goal yet."
                     continue
                 else:
-                    print "Cannot reset on runs after the first."
+                    if output: print "Cannot reset on runs after the first."
                     continue
 
             # perform rotation
@@ -82,11 +82,11 @@ def main(argv1, argv2 = None):
             elif rotation == 0:
                 pass
             else:
-                print "Invalid rotation value, no rotation performed."
+                if output: print "Invalid rotation value, no rotation performed."
 
             # perform movement
             if abs(movement) > 3:
-                print "Movement limited to three squares in a turn."
+                if output: print "Movement limited to three squares in a turn."
             movement = max(min(int(movement), 3), -3) # fix to range [-3, 3]
             while movement:
                 if movement > 0:
@@ -95,7 +95,7 @@ def main(argv1, argv2 = None):
                         robot_pos['location'][1] += dir_move[robot_pos['heading']][1]
                         movement -= 1
                     else:
-                        print "Movement stopped by wall."
+                        if output: print "Movement stopped by wall."
                         movement = 0
                 else:
                     rev_heading = dir_reverse[robot_pos['heading']]
@@ -104,7 +104,7 @@ def main(argv1, argv2 = None):
                         robot_pos['location'][1] += dir_move[rev_heading][1]
                         movement += 1
                     else:
-                        print "Movement stopped by wall."
+                        if output: print "Movement stopped by wall."
                         movement = 0
 
             # check for goal entered
@@ -114,13 +114,16 @@ def main(argv1, argv2 = None):
                 if run != 0:
                     runtimes.append(total_time - sum(runtimes))
                     run_active = False
-                    print "Goal found; run {} completed!".format(run)
+                    if output: print "Goal found; run {} completed!".format(run)
         
-    score = runtimes[1] + train_score_mult*runtimes[0]
+    if total_time > max_time:
+        score = None
+    else:
+        score = runtimes[1] + train_score_mult*runtimes[0]
 
     # Report score if robot is successful.
     if len(runtimes) == 2:
-        print "Task complete! Score: {:4.3f}".format(score)
+        if output: print "Task complete! Score: {:4.3f}".format(score)
     
     # If 'showroute' was sent as an argument in the execution command, retrieve the route map from robot
     if showroute:

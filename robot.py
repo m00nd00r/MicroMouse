@@ -1,7 +1,6 @@
 import numpy as np
 from operator import add, sub
 import heapq
-#import collections
 import random
 import sys
 import time
@@ -36,7 +35,8 @@ class Robot(object):
         self.next_heading = 'r'
         self.maze_dim = maze_dim
         self.steps = 0
-        self.count = 0
+        self.mcount = 0
+        self.rcount = 0
         self.index = 0
         
         self.exploring = True     #Flag to switch from exploring to exploiting
@@ -48,7 +48,7 @@ class Robot(object):
         self.testing = False
         
         self.pref_heading = []    #Heading preference list for smart mapping strategy
-        self.rotate_cost = 2
+        self.rotate_cost = 1.1
         self.no_rotate_cost = 1
         self.rotate_count = 0
         self.loop_count = 0
@@ -78,54 +78,6 @@ class Robot(object):
         self.dead_end_set = set()   #Set of cells that lead into dead ends and dead end corridors.
         
         default = (self.maze_dim + 2)**2
-        
-        try:
-            #self.reset_threshold = int(sys.argv[2]) #Check if user entered a reset threshold
-            movement = os.environ['MOVEMENT_RESET_THRESHOLD']
-        except:
-            movement = '' #If reset threshold not entered, use this default
-        if isinstance(movement,(int,long)):
-            if movement < 1000 and movement > 0:
-                self.movement_reset_threshold = movement
-                print 'Movement reset threshold set to {}.'.format(movement)
-        else:
-            self.movement_reset_threshold = default
-            print 'Movement reset threshold set to default = {}.'.format(default)
-            
-        try:
-            coverage = int(os.environ['COVERAGE_RESET_THRESHOLD'])
-        except:
-            coverage = ''
-        if isinstance(coverage,(int, long)):
-            if coverage <= 100 and coverage > 0:
-                self.coverage_reset_threshold = coverage
-                print 'Coverage reset threshold set to {}%.'.format(self.coverage_reset_threshold)
-        elif coverage == 'goal':
-            self.coverage_reset_threshold = 'goal'
-            print 'Coverage reset threshold set to goal.'
-        else:
-            self.coverage_reset_threshold = 'goal'
-            print 'Coverage reset threshold set to default = goal.'
-            
-        try:
-            controller_name = os.environ['MAP_STRATEGY']
-        except:
-            controller_name = ''
-        if controller_name == 'random':
-            self.controller = self.random_explore
-            print 'Maze map strategy used is {}.\n'.format(controller_name)
-        elif controller_name == 'avoid dead ends':
-            self.controller = self.avoid_dead_ends_explore
-            print 'Maze map strategy used is {}.\n'.format(controller_name)
-        elif controller_name == 'smart map':
-            self.controller = self.smart_map_explore1
-            print 'Maze map strategy used is {}.\n'.format(controller_name)
-        elif controller_name == 'smart map 2':
-            self.controller = self.smart_map_explore2
-            print 'Maze map strategy used is {}.\n'.format(controller_name)
-        else:
-            self.controller = self.smart_map_explore1
-            print 'Maze map strategy used is smart map.\n'
             
         try:
             test_report = os.environ['TEST_REPORT']
@@ -135,6 +87,64 @@ class Robot(object):
             self.testing = True
         else:
             self.testing = False
+        
+        #try:
+        #    #self.reset_threshold = int(sys.argv[2]) #Check if user entered a reset threshold
+        #    movement = os.environ['MOVEMENT_RESET_THRESHOLD']
+        #except:
+        #    movement = '' #If reset threshold not entered, use this default
+        #if isinstance(movement,(int,long)):
+        #    if movement < 1000 and movement > 0:
+        #        self.movement_reset_threshold = movement
+        #        if self.testing: print 'Movement reset threshold set to {}.'.format(movement)
+        #else:
+        #    self.movement_reset_threshold = default
+        #    if self.testing: print 'Movement reset threshold set to default = {}.'.format(default)
+            
+        try:
+            coverage = os.environ['COVERAGE_RESET_THRESHOLD']
+        except:
+            coverage = ''
+        if coverage == 'goal':
+            self.coverage_reset_threshold = 'goal'
+            if self.testing: print 'Coverage reset threshold set to goal.'
+        elif int(coverage) <= 100 and int(coverage) > 0:
+            self.coverage_reset_threshold = int(coverage)
+            if self.testing: print 'Coverage reset threshold set to {}%.'.format(self.coverage_reset_threshold)
+        else:
+            self.coverage_reset_threshold = 100
+            if self.testing: print 'Coverage reset threshold set to default = 100%.'
+            
+        try:
+            controller_name = os.environ['MAP_STRATEGY']
+        except:
+            controller_name = ''
+        if controller_name == 'random':
+            self.controller = self.random_explore
+            if self.testing: print 'Maze map strategy used is {}.\n'.format(controller_name)
+        elif controller_name == 'avoid dead ends':
+            self.controller = self.avoid_dead_ends_explore
+            if self.testing: print 'Maze map strategy used is {}.\n'.format(controller_name)
+        elif controller_name == 'smart map 1':
+            self.controller = self.smart_map_explore1
+            if self.testing: print 'Maze map strategy used is {}.\n'.format(controller_name)
+        elif controller_name == 'smart map 2':
+            self.controller = self.smart_map_explore2
+            if self.testing: print 'Maze map strategy used is {}.\n'.format(controller_name)
+        else:
+            self.controller = self.smart_map_explore2
+            if self.testing: print 'Maze map strategy used is smart map 2.\n'
+                
+        try:
+            mapper_name = os.environ['MAPPER']
+        except:
+            mapper_name = ''
+        if mapper_name == 'mapper1':
+            self.mapper = self.update_maze_map1
+            if self.testing: print 'Mapper method is mapper1.\n'
+        else:
+            self.mapper = self.update_maze_map2
+            if self.testing: print 'Mapper method is mapper2.\n'
             
     def next_move(self, sensors):
         '''
@@ -173,10 +183,11 @@ class Robot(object):
     def explore(self):
         ''' Function used during first run to find the goal and map the maze'''
         
-        self.update_maze_map2()
+        self.mapper()
         self.update_count_map()
         
-        if self.goal and (self.mapped or self.steps >= self.movement_reset_threshold):
+        if self.goal and self.mapped:
+        #if self.goal and (self.mapped or self.steps >= self.movement_reset_threshold):
             self.planning = True
             rotation,movement = ('Reset','Reset')
             self.exploring = False
@@ -210,7 +221,6 @@ class Robot(object):
             self.heading = 'u'
             self.goal_route = []
             self.goal_route = self.a_star_search1(self.start, self.goal_door_location)
-            #self.goal_route = self.a_star_search2()
             #self.goal_route = self.d_star_lite_search()
             self.action_list = []
             self.action_list.append('S')
@@ -254,10 +264,11 @@ class Robot(object):
         elif report == 'success':
             print '\nRoute to goal:'
             self.print_grid(self.rmap)
-            print '\nCost map:'        
-            self.print_map3(self.cost_so_far)
+            #print '\nCost map:'        
+            #self.print_map3(self.cost_so_far)
             print '\nTotal length of route is {} grid cells.'.format(len(self.goal_route))
-            print 'Total movements to goal = {}.'.format(self.count)
+            print 'Total movements to goal is {}.'.format(self.mcount)
+            print 'Total rotations to goal is {}.'.format(self.rcount)
             print 'Total compute time is {:.4} seconds.'.format(time.clock() - self.start_time)
         else:
             print '\nNumber of walls mapped per cell:'
@@ -348,9 +359,9 @@ class Robot(object):
         for orientation in grids:
             print orientation
             gridmap = []
-            for j in reversed(range(maze_dim)):
+            for j in reversed(range(self.maze_dim)):
                 gridrow = []
-                for i in range(maze_dim):
+                for i in range(self.maze_dim):
                     gridrow.append(grids[orientation].get((i,j)))
                 gridmap.append(gridrow)
             for i in range(len(gridmap)):
@@ -485,27 +496,13 @@ class Robot(object):
             if (tuple(neighbor_cells) in self.maze_map) and (tuple(neighbor_cells) not in self.dead_end_set):
                 no_dead_ends.append(dir_sensors[self.heading].index(i))
                 open_cells.append(tuple(neighbor_cells))
+            no_dead_ends.sort()
         return no_dead_ends,open_cells
     
     def map_strategy(self):
         '''Create a strategy for choosing which of mulitple available cells to move into based on moving
            counter-clockwise around the grid and reaching the boundaries.'''
         
-        ##if in quadrant 1 or 2 (bottom half of maze) and right wall hasn't been reached:
-        #if self.location[1] < self.maze_dim/2 and not self.right_wall:
-        #    self.pref_heading = ['r','d','u','l']
-        ##if in quadrant 2 or 3 (right half of maze) and right wall has been reached:
-        #elif self.location[0] >= self.maze_dim/2 and self.right_wall and not self.top_wall:
-        #    self.pref_heading = ['u','r','l','d']
-        #elif self.location[0] >= self.maze_dim/2 and self.right_wall and self.top_wall:
-        #    self.pref_heading = ['u','l','r','d']
-        ##if in quadrant 3 or 4 (top half of maze) and top wall has been reached:
-        #elif self.location[1] >= self.maze_dim/2 and self.top_wall and not self.left_wall:
-        #    self.pref_heading = ['l','u','d','r']
-        ##if in quadrant 3 or 1 (left half of maze) and left wall has been reached:
-        #elif self.location[0] < self.maze_dim/2 and self.left_wall:
-        #    self.pref_heading = ['d','l','r','u']
-            
         if not self.goal:
             if self.quad_list[0]:
                 self.pref_heading = ['r','d','u','l']
@@ -583,10 +580,13 @@ class Robot(object):
             #Check if any available openings lead to dead end and return those that aren't
             no_dead_ends,open_cells = self.dead_ends()
             #Pick one of the sensor list indices at random
-            rot_ind = random.choice(no_dead_ends)
-            #Rotate and move
-            rotation = rotation_index[rot_ind]
-            movement = 1
+            if len(no_dead_ends) > 0:
+                rot_ind = random.choice(no_dead_ends)
+                rotation = rotation_index[rot_ind]
+                movement = 1
+            else:
+                movement = 0
+                rotation = 1
         #If there's only 1 direction to move, just move there. This is also used to help indentify dead-end
         #corridors.
         elif np.count_nonzero(self.sensors) == 1:
@@ -659,56 +659,50 @@ class Robot(object):
                     if oc2[0][0] < oc2[1][0]:            #First preference is for least mapped.
                         next_cell = oc2[0][1]
                         #print '1'
-                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
-                        next_cell = gq2[0][1]            
-                        #print '2'
                     elif oc1[0][0] < oc1[1][0]:          #Otherwise if they're all equally mapped and the same distance
                         next_cell = oc1[0][1]            #from the goal, choose the one least visited.
+                        #print '2'
+                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
+                        next_cell = gq2[0][1]            
                         #print '3'
                     else:
                         if len(gq2) == 3 and gq2[0][0] < gq2[2][0]:                  
                             gq2.pop(-1)                  #If none of the above are true and there are 3 cells to choose from
                                                          #If the third cell is further than the first and second cells,
                                                          #Remove it from the list
-                                                         #If there are 2 or 3 cells all equidistant from the goal,
-                        hq = []                          #that are all equally visited and that are equally mapped,
-                        #for o in oc:                    #so choose one based on preferred heading.
-                        #    for k,v in dir_move.iteritems():
-                        #        if v == map(sub,o[1],self.location):
-                        #            heapq.heappush(hq,(self.pref_heading.index(k),o))
-                        #The preceding code block can be compressed to the following line.
-                        [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in gq2 for k,v in dir_move.iteritems() \
-                         if v == map(sub,o[1],self.location)]
-                        next_cell = heapq.heappop(hq)[1]
-                        self.pref_head_count += 1
-                        #print '4'            
-                    #print '3'
+                        #If there are 2 or 3 cells all equidistant from the goal,
+                        #that are all equally visited and that are equally mapped,
+                        #choose one at random.
+                        next_cell = random.choice(gq2)[1]
+                        #print '4'       
                 else:
                     if oc2[0][0] < oc2[1][0]:            #First, choose the one least mapped,
                         next_cell = oc2[0][1]          
-                        #print '6'
+                        #print '5'
                     elif oc1[0][0] < oc1[1][0]:          #If all mapped, choose the next cell that was least visited
                         next_cell = oc1[0][1]            
-                        #print '5' 
+                        #print '6' 
                     else:
                         if len(oc1) == 3 and oc1[0][0] < oc1[2][0]:                   
                             oc1.pop(-1)                  #If the first two cells were visited equally and there are 3 to choose from
                                                          #If the third cell is larger than the first,
                                                          #Remove it from the list
-                                                         #Otherwise there are 2 or 3 cells all equally visited and mapped, 
-                        hq = []                          #so choose one based on the preferred heading list instead.
-                        [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in oc1 for k,v in dir_move.iteritems() \
-                         if v == map(sub,o[1],self.location)]
-                        next_cell = heapq.heappop(hq)[1]
-                        self.pref_head_count += 1
+                        #If there are 2 or 3 cells all equidistant from the goal,
+                        #that are all equally visited and that are equally mapped,
+                        #choose one at random.
+                        next_cell = random.choice(oc1)
                         #print '7'
+                #print next_cell
                 next_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,self.location)][0]
                 rotation = dir_rotation[self.heading][next_heading]
                 movement = 1
                 
-            else:
+            elif len(open_cells) == 1:
                 rotation = rotation_index[no_dead_ends[0]]
                 movement = 1
+            else:
+                rotation = 0
+                movement = -1
                 
         #If there's only 1 direction to move, just move there. This is also used to help indentify dead-end
         #corridors.
@@ -743,8 +737,10 @@ class Robot(object):
         return rotation,movement
 
     def smart_map_explore2(self):
-        '''This exploring function is meant to employ the faster mapping function as well as improved
-           mapping strategy that will try to get to the goal as quickly as possible.'''
+        '''This exploring function is meant to employ the faster mapping function as well as the nearest neighbor
+           function to choose which turns to make based on proximity to nearest un/dermapped cell.'''
+        
+        '''Not implemented yet. For future improvements. This is just a copy of smart_map_explore1 for now.'''
         
         #To prevent getting caught in loops, keep a tally of the sum of the rotations.
         #If the sum rises above 4 or below -4, the robot has come full circle.
@@ -787,12 +783,12 @@ class Robot(object):
                     if oc2[0][0] < oc2[1][0]:            #First preference is for least mapped.
                         next_cell = oc2[0][1]
                         #print '1'
-                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
-                        next_cell = gq2[0][1]            
-                        #print '2'
                     elif oc1[0][0] < oc1[1][0]:          #Otherwise if they're all equally mapped and the same distance
                         next_cell = oc1[0][1]            #from the goal, choose the one least visited.
                         #print '3'
+                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
+                        next_cell = gq2[0][1]            
+                        #print '2'
                     else:
                         if len(gq2) == 3 and gq2[0][0] < gq2[2][0]:                  
                             gq2.pop(-1)                  #If none of the above are true and there are 3 cells to choose from
@@ -833,9 +829,12 @@ class Robot(object):
                 rotation = dir_rotation[self.heading][next_heading]
                 movement = 1
                 
-            else:
+            elif len(open_cells) == 1:
                 rotation = rotation_index[no_dead_ends[0]]
                 movement = 1
+            else:
+                rotation = 0
+                movement = -1
                 
         #If there's only 1 direction to move, just move there. This is also used to help indentify dead-end
         #corridors.
@@ -996,7 +995,7 @@ class Robot(object):
             heapq.heappush(open, (0, i))
             came_from[i] = None           #Every key in came_from is a cell in the maze and 
                                           #has for its value the previous cell the robot was in.
-            self.cost_so_farcost_so_far[i] = 0            
+            self.cost_so_far[i] = 0            
                                           #Every key in cost_so_far is a cell in the maze and
                                           #has for its value the number of steps to get to that cell
                                           #from self.start (0,0) plus the cost of moving to this same
@@ -1054,13 +1053,14 @@ class Robot(object):
                 
         path = []
         route = {}
-        cost = [2, 1, 2]    #Cost for left turn, no turn, right turn
+        cost = [self.rotate_cost,self.no_rotate_cost,self.rotate_cost]    #Cost for left turn, no turn, right turn
         action_name = ['L', '#', 'R']    #Symbols for left turn, no turn, right turn
         
+        init = 999
         for i in range(self.maze_dim):      
             for j in range(self.maze_dim):
-                value[(i,j)] = {'u':99,'r':99,'d':99,'l':99}
-                policy[(i,j)] = {'u':99,'r':99,'d':99,'l':99}
+                value[(i,j)] = {'u':init,'r':init,'d':init,'l':init}
+                policy[(i,j)] = {'u':init,'r':init,'d':init,'l':init}
         
         change = True
         while change:
@@ -1068,8 +1068,8 @@ class Robot(object):
             
             for cell in self.maze_map:
                 for orientation in ['u','r','d','l']:
-                    #if cell == self.goal_door_location:
-                    if cell[0] in self.goal_bounds and cell[1] in self.goal_bounds:
+                    if cell == self.goal_door_location:
+                    #if cell[0] in self.goal_bounds and cell[1] in self.goal_bounds:
                         if value[cell][orientation] > 0:
                             value[cell][orientation] = 0
                             policy[cell][orientation] = 'G'
@@ -1090,7 +1090,7 @@ class Robot(object):
         #Print functions to visualize value and policy for debugging and understanding
         #how the algorithm works.
         #print_map2(value)
-        #print_map2(policy)
+        #self.print_map2(policy)
             
         cell = self.start
         orientation = 'u'
@@ -1106,6 +1106,8 @@ class Robot(object):
                 o2 = dir_sensors[orientation][0]
             cell = tuple(map(add,cell,dir_move[o2]))
             orientation = o2
+            if cell == (0,16):
+                print orientation
             route[cell] = policy[cell][orientation]
             path.append(cell)
         
@@ -1113,8 +1115,11 @@ class Robot(object):
         
         return path
     
-    #Function to create a list of moves from start (S) to goal (G) using '#' for no turn, 'L' for left turn, 'R' for right turn
+    
     def route_map(self, rot, mov):
+        '''Function to create a list of moves from start (S) to goal (G) using '#' for no turn, 'L' for left turn, 'R' for right
+           turn.'''
+        
         if rot == 0:
             for m in range(mov):
                 self.action_list.append('#')
@@ -1144,8 +1149,15 @@ class Robot(object):
             for step in range(3):
                 #Return the heading key in dir_move whose value is equal to the difference between each pair of successive
                 #map locations in goal_route
-                heading.append([k for k,v in dir_move.iteritems() \
-                        if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
+                if self.index + step + 1 == len(self.goal_route):
+                    break
+                for k,v in dir_move.iteritems():
+                    #print k,v,self.index,step,len(self.goal_route)
+                    if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step]):
+                        heading.append(k)
+                        
+                #heading.append([k for k,v in dir_move.iteritems() \
+                #        if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
                 #heading now contains the next 3 turns. Increment through the list, for each one that is that same as
                 #the current heading, add 1 to movement
                 if heading[step] == heading[step+1]:
@@ -1157,9 +1169,10 @@ class Robot(object):
             else: 
                 movement = 1
                 rotation = dir_rotation[heading[0]][heading[1]]
+                self.rcount += 1
             
             self.update_position(rotation,movement)   
-            self.count += 1
+            self.mcount += 1
             self.index += movement
             
             return rotation,movement

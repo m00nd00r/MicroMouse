@@ -19,7 +19,7 @@ def run(argv, rmap = None):
     wally.penup()
 
     # maze centered on (0,0), squares are 20 units in length.
-    sq_size = 20
+    sq_size = 30
     origin = testmaze.dim * sq_size / -2
 
     # iterate through squares one by one to decide where to draw walls
@@ -56,8 +56,8 @@ def run(argv, rmap = None):
                 wally.penup()
             
             if rmap:
-                wally.goto(origin + sq_size * x + sq_size / 2, origin + sq_size * y)
-                wally.write(rmap.get((x,y),''),align = "center")
+                wally.goto(origin + sq_size * x + sq_size / 2, origin + sq_size * y + sq_size / 4)
+                wally.write(rmap.get((x,y),''),align = "center",font = ("Arial",10,"normal"))
                 
     window.exitonclick()
     
