@@ -8,7 +8,7 @@ import time
 location = start = (0,0)
 heading = 'u'
 goal_route = []
-rotate_cost = 1.1
+rotate_cost = 3.1
 no_rotate_cost = 1
 alpha = 0.6
 goal = False

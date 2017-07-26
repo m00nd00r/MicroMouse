@@ -48,7 +48,7 @@ class Robot(object):
         self.testing = False
         
         self.pref_heading = []    #Heading preference list for smart mapping strategy
-        self.rotate_cost = 1.1
+        self.rotate_cost = 3
         self.no_rotate_cost = 1
         self.rotate_count = 0
         self.loop_count = 0
@@ -249,23 +249,16 @@ class Robot(object):
         if report == 'exploring':
             print '\nFound Goal in {} moves.'.format(self.steps)
             print 'Percent of cell walls mapped until goal found is {:.0%}.'.format(self.is_mapped())
-            self.steps_to_goal = self.steps
             print '\nNumber of walls mapped per cell:'
             self.print_map1(self.maze_map)
             print '\nPercent of total walls mapped during explore is {:.0%}.'.format(self.is_mapped())
-            print 'Total number of moves for 1st run is {}.'.format(self.steps_to_goal)
+            print 'Total number of moves for 1st run is {}.'.format(self.steps)
             print '\nNumber of times each cell visited:'
             self.print_map3(self.count_map)
             print '\n'
-            #print '\nTotal number of loops entered is {}.'.format(self.loop_count)
-            #print 'Total times Preferred Heading used {}.'.format(self.pref_head_count)
-            #print 'Rotate count is {}'.format(self.rotate_count)
-            #print 'Self.mapped = {}.\n'.format(self.mapped)
         elif report == 'success':
             print '\nRoute to goal:'
             self.print_grid(self.rmap)
-            #print '\nCost map:'        
-            #self.print_map3(self.cost_so_far)
             print '\nTotal length of route is {} grid cells.'.format(len(self.goal_route))
             print 'Total movements to goal is {}.'.format(self.mcount)
             print 'Total rotations to goal is {}.'.format(self.rcount)
@@ -280,7 +273,7 @@ class Robot(object):
             print 'Rotate count is {}\n'.format(self.rotate_count)
     
     def init_maps(self):
-        '''Initialize the maze_map, the count_map, and the open_map.'''
+        '''Initialize the maze_map and the count_map'''
         
         for i in range(self.maze_dim):
             for j in range(self.maze_dim):
@@ -659,10 +652,10 @@ class Robot(object):
                     if oc2[0][0] < oc2[1][0]:            #First preference is for least mapped.
                         next_cell = oc2[0][1]
                         #print '1'
-                    elif oc1[0][0] < oc1[1][0]:          #Otherwise if they're all equally mapped and the same distance
-                        next_cell = oc1[0][1]            #from the goal, choose the one least visited.
+                    elif oc1[0][0] < oc1[1][0]:          #Second preference is for least visited.
+                        next_cell = oc1[0][1]            
                         #print '2'
-                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
+                    elif gq2[0][0] < gq2[1][0]:          #Third preference is for closest to the goal
                         next_cell = gq2[0][1]            
                         #print '3'
                     else:
@@ -670,9 +663,7 @@ class Robot(object):
                             gq2.pop(-1)                  #If none of the above are true and there are 3 cells to choose from
                                                          #If the third cell is further than the first and second cells,
                                                          #Remove it from the list
-                        #If there are 2 or 3 cells all equidistant from the goal,
-                        #that are all equally visited and that are equally mapped,
-                        #choose one at random.
+                        #All else equal, pick at random.
                         next_cell = random.choice(gq2)[1]
                         #print '4'       
                 else:
@@ -783,10 +774,10 @@ class Robot(object):
                     if oc2[0][0] < oc2[1][0]:            #First preference is for least mapped.
                         next_cell = oc2[0][1]
                         #print '1'
-                    elif oc1[0][0] < oc1[1][0]:          #Otherwise if they're all equally mapped and the same distance
-                        next_cell = oc1[0][1]            #from the goal, choose the one least visited.
+                    elif oc1[0][0] < oc1[1][0]:          #Second preference is for least visited.
+                        next_cell = oc1[0][1]            
                         #print '3'
-                    elif gq2[0][0] < gq2[1][0]:          #If all equally mapped, then choose the one closest to the goal
+                    elif gq2[0][0] < gq2[1][0]:          #Third preference is for closest to the goal
                         next_cell = gq2[0][1]            
                         #print '2'
                     else:
@@ -794,9 +785,10 @@ class Robot(object):
                             gq2.pop(-1)                  #If none of the above are true and there are 3 cells to choose from
                                                          #If the third cell is further than the first and second cells,
                                                          #Remove it from the list
-                                                         #If there are 2 or 3 cells all equidistant from the goal,
-                        hq = []                          #that are all equally visited and that are equally mapped,
-                        #for o in oc:                    #so choose one based on preferred heading.
+                                    
+                        #Finally, pick based on map_strategy() prefenences.
+                        hq = []                          
+                        #for o in oc:                    
                         #    for k,v in dir_move.iteritems():
                         #        if v == map(sub,o[1],self.location):
                         #            heapq.heappush(hq,(self.pref_heading.index(k),o))
@@ -810,7 +802,7 @@ class Robot(object):
                     if oc2[0][0] < oc2[1][0]:            #First, choose the one least mapped,
                         next_cell = oc2[0][1]          
                         #print '6'
-                    elif oc1[0][0] < oc1[1][0]:          #If all mapped, choose the next cell that was least visited
+                    elif oc1[0][0] < oc1[1][0]:          #Second, choose least visited
                         next_cell = oc1[0][1]            
                         #print '5' 
                     else:
@@ -818,8 +810,9 @@ class Robot(object):
                             oc1.pop(-1)                  #If the first two cells were visited equally and there are 3 to choose from
                                                          #If the third cell is larger than the first,
                                                          #Remove it from the list
-                                                         #Otherwise there are 2 or 3 cells all equally visited and mapped, 
-                        hq = []                          #so choose one based on the preferred heading list instead.
+                        
+                        #Finally, pick based on map_strategy() prefenences.
+                        hq = []                          
                         [heapq.heappush(hq,(self.pref_heading.index(k),o[1]))for o in oc1 for k,v in dir_move.iteritems() \
                          if v == map(sub,o[1],self.location)]
                         next_cell = heapq.heappop(hq)[1]
@@ -961,8 +954,7 @@ class Robot(object):
                     for next_cell in self.neighbors(current):
                         # f = g + h: typical format for cost function for A* search
                         #Calculate the cost for moving from the current cell to any of the available neighhbors.
-                        #The cost for moving to a neighbor in the same direction will be 1 and that for moving
-                        #to a neighbor requiring a rotation will be 2.
+                        
                         #To calculate the current heading to determine whether a turn is needed we need the
                         #previous cell from which the robot moved to the current cell. This can be found in came_from.
                         move_cost = self.cost_so_far[current] + self.cost1(came_from[current],current, next_cell, start)
@@ -1152,12 +1144,8 @@ class Robot(object):
                 if self.index + step + 1 == len(self.goal_route):
                     break
                 for k,v in dir_move.iteritems():
-                    #print k,v,self.index,step,len(self.goal_route)
                     if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step]):
                         heading.append(k)
-                        
-                #heading.append([k for k,v in dir_move.iteritems() \
-                #        if v == map(sub,self.goal_route[self.index+step+1],self.goal_route[self.index+step])][0])
                 #heading now contains the next 3 turns. Increment through the list, for each one that is that same as
                 #the current heading, add 1 to movement
                 if heading[step] == heading[step+1]:
