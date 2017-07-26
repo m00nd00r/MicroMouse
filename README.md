@@ -1,7 +1,7 @@
 
 # Micro Mouse - Robot Motion Planning
 ## Capstone Project: Plot And Navigate A Virtual Maze
-## see https://m00nd00r.github.io/MicroMouse/
+## see https://m00nd00r.github.io/MicroMouse/ for project page
 
 
 ### Install
