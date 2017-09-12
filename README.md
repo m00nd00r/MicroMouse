@@ -8,6 +8,7 @@
 ### Install
 
 This project requires **Python 2.7.13** and uses the Anaconda package manager.
+Please also make sure that you have the numpy package installed.
 
 ### Code
 
