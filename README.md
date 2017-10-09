@@ -7,15 +7,42 @@
 
 ## Install
 
-This project requires **Python 2.7.13** and uses the Anaconda package manager.
-Please also make sure that you have the numpy package installed.
+This project requires **Python 2** and uses the Anaconda package manager.
+If you haven't already please download and install Anaconda.
+
+Instructions:
+1. Clone the repository and navigate to the downloaded folder.
+	
+	```	
+		git clone https://github.com/m00nd00r/MicroMouse.git
+		cd MicroMouse
+	```
+    
+2. Obtain the necessary Python packages.  
+	
+	For __Mac/OSX__:
+	```
+		conda env create -f requirements/micromouse-mac.yml
+		source activate micromouse
+	```
+
+	For __Windows__:
+	```
+		conda env create -f requirements/micromouse-windows.yml
+		activate micromouse
+	```
+
+	For __Linux__:
+	```
+		conda env create -f requirements/micromouse-linux.yml
+		source activate micromouse
 
 ### Code
 
 Template code is provided in this repository. The 3 scripts necessary for initial run are:  
     `tester.py`  
     `maze.py`  
-    `robot.py`  
+    `robot.py`
 
 ### Run
 
