@@ -1,5 +1,4 @@
 import tester_1,os
-import pandas as pd
 
 def test(maze, num):
     scores = []
