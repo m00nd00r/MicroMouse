@@ -22,13 +22,13 @@ Instructions:
 	
 	For __Mac/OSX/Linux__:
 	```
-		conda env create -f requirements/micromouse-mac.yml
+		conda create -n micromouse python=2 numpy jupyter
 		source activate micromouse
 	```
 
 	For __Windows__:
 	```
-		conda env create -f requirements/micromouse-windows.yml
+		conda create -n micromouse python=2 numpy jupyter
 		activate micromouse
 	```
 
