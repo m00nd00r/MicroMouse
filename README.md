@@ -20,7 +20,7 @@ Instructions:
     
 2. Obtain the necessary Python packages.  
 	
-	For __Mac/OSX__:
+	For __Mac/OSX/Linux__:
 	```
 		conda env create -f requirements/micromouse-mac.yml
 		source activate micromouse
@@ -31,11 +31,6 @@ Instructions:
 		conda env create -f requirements/micromouse-windows.yml
 		activate micromouse
 	```
-
-	For __Linux__:
-	```
-		conda env create -f requirements/micromouse-linux.yml
-		source activate micromouse
 
 ### Code
 
