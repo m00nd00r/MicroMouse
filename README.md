@@ -22,13 +22,13 @@ Instructions:
 	
 	For __Mac/OSX/Linux__:
 	```
-		conda create -n micromouse python=2 numpy jupyter
+		conda env create -f requirements/smartcab-osx.yml
 		source activate micromouse
 	```
 
 	For __Windows__:
 	```
-		conda create -n micromouse python=2 numpy jupyter
+		conda create -f requirements/smartcab-windows.yml
 		activate micromouse
 	```
 
