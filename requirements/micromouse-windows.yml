@@ -1,8 +1,6 @@
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: win-64
 name: micromouse
 channels:
+- anaconda-fusion
 - defaults
 dependencies:
 - asn1crypto=0.22.0=py27hc975345_1
@@ -23,6 +21,7 @@ dependencies:
 - entrypoints=0.2.3=py27h0271f2b_2
 - enum34=1.1.6=py27h2aa175b_1
 - functools32=3.2.3.2=py27h0cdbcdb_1
+- futures=3.1.1=py27h71313b4_0
 - html5lib=0.999999999=py27h47766b3_0
 - icc_rt=2017.0.4=h97af966_0
 - icu=58.2=vc9h3e79e4e_0
@@ -30,6 +29,7 @@ dependencies:
 - intel-openmp=2018.0.0=hcd89f80_7
 - ipaddress=1.0.18=py27h08e1fa7_0
 - ipykernel=4.6.1=py27h30cef79_0
+- ipyparallel=6.0.2=py27_0
 - ipython=5.4.1=py27hbf971b4_1
 - ipython_genutils=0.2.0=py27hbe997df_0
 - ipywidgets=7.0.0=py27he0f823d_0
@@ -40,7 +40,7 @@ dependencies:
 - jupyter_client=5.1.0=py27hced1786_0
 - jupyter_console=5.2.0=py27h6ed736b_1
 - jupyter_core=4.3.0=py27h7bec3d2_0
-- libpng=1.6.32=vc9h4f2627b_2
+- libpng=1.6.32=vc9h2352712_3
 - lockfile=0.12.2=py27hcad0c83_0
 - markupsafe=1.0=py27h9d4480d_1
 - mistune=0.7.4=py27h0f41fca_0
@@ -65,26 +65,26 @@ dependencies:
 - pyparsing=2.2.0=py27hc7d9fa6_1
 - pyqt=5.6.0=py27h224ed30_5
 - pysocks=1.6.7=py27h59bdd1e_1
-- python=2.7.14=h2765ee6_18
+- python=2.7.14=h59f5a59_20
 - python-dateutil=2.6.1=py27hbdcc174_1
 - pyzmq=16.0.2=py27h7554bf6_2
 - qt=5.6.2=vc9hc26998b_12
 - qtconsole=4.3.1=py27h77d40ac_0
 - requests=2.18.4=py27h3159eba_1
-- scandir=1.5=py27hc48eb83_1
+- scandir=1.6=py27h518bda0_0
 - setuptools=36.5.0=py27ha483b79_0
 - simplegeneric=0.8.1=py27h2c3a90d_0
 - singledispatch=3.4.0.3=py27h3f9d112_0
 - sip=4.18.1=py27h5ec1c1a_2
-- six=1.10.0=py27h5de879c_1
+- six=1.11.0=py27ha5e1701_1
 - sqlite=3.20.1=vc9h5ec81ce_1
 - ssl_match_hostname=3.5.0.1=py27hea8a0f4_2
 - testpath=0.3.1=py27h1cd488d_0
 - tornado=4.5.2=py27hbdd278e_0
 - traitlets=4.3.2=py27h1b1b3a5_0
 - urllib3=1.22=py27hb9f5a07_0
-- vc=9=h7299396_0
-- vs2008_runtime=9.00.30729.1=hfaea7d5_0
+- vc=9=h7299396_1
+- vs2008_runtime=9.00.30729.1=hfaea7d5_1
 - wcwidth=0.1.7=py27hb1a0d82_0
 - webencodings=0.5.1=py27h4e224a2_1
 - wheel=0.29.0=py27hffb40b6_1
@@ -93,3 +93,15 @@ dependencies:
 - win_unicode_console=0.5=py27hc037021_0
 - wincertstore=0.2=py27hf04cefb_0
 - zlib=1.2.11=vc9ha80f4e8_1
+- pip:
+  - backports-abc==0.5
+  - backports.shutil-get-terminal-size==1.0.0
+  - backports.ssl-match-hostname==3.5.0.1
+  - ipython-genutils==0.2.0
+  - jupyter-client==5.1.0
+  - jupyter-console==5.2.0
+  - jupyter-core==4.3.0
+  - prompt-toolkit==1.0.15
+  - win-inet-pton==1.0.1
+  - win-unicode-console==0.5
+
