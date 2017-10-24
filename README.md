@@ -7,7 +7,7 @@
 
 ## Install
 
-This project requires **Python 2** and uses the Anaconda package manager.
+This project requires **Python 2** and uses the Anaconda Python distribution.
 If you haven't already please download and install Anaconda.
 
 Instructions:
