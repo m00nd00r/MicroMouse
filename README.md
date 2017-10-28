@@ -7,7 +7,7 @@
 
 ## Install
 
-This project requires **Python 2** and uses the Anaconda package manager.
+This project requires **Python 2** and uses the Anaconda Python distribution.
 If you haven't already please download and install Anaconda.
 
 Instructions:
@@ -22,13 +22,13 @@ Instructions:
 	
 	For __Mac/OSX/Linux__:
 	```
-		conda env create -f requirements/smartcab-osx.yml
+		conda env create -f requirements/micromouse-osx.yml
 		source activate micromouse
 	```
 
 	For __Windows__:
 	```
-		conda create -f requirements/smartcab-windows.yml
+		conda create -f requirements/micromouse-windows.yml
 		activate micromouse
 	```
 
