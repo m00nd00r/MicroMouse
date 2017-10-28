@@ -11775,14 +11775,14 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Plot-And-Navigate-A-Maze">Plot And Navigate A Maze<a class="anchor-link" href="#Plot-And-Navigate-A-Maze">&#194;&#182;</a></h1><h2 id="Robot-Motion-Planning-Capstone-Project">Robot Motion Planning Capstone Project<a class="anchor-link" href="#Robot-Motion-Planning-Capstone-Project">&#194;&#182;</a></h2><h2 id="John-Kinstler---07/26/17">John Kinstler - 07/26/17<a class="anchor-link" href="#John-Kinstler---07/26/17">&#194;&#182;</a></h2><h3 id="Project-files-at-https://github.com/m00nd00r/MicroMouse">Project files at <a href="https://github.com/m00nd00r/MicroMouse">https://github.com/m00nd00r/MicroMouse</a><a class="anchor-link" href="#Project-files-at-https://github.com/m00nd00r/MicroMouse">&#194;&#182;</a></h3><h3 id="Project-Overview">Project Overview<a class="anchor-link" href="#Project-Overview">&#194;&#182;</a></h3><p>The goal of robot motion planning is to find a path for a robot to follow from a starting point to some distant waypoint without colliding with obstacles in the world (also called the configuration space) the robot is moving through. In this particular iteration I will be creating and testing algorithms to allow a robot mouse to plot and navigate a virtual maze.</p>
+<h1 id="Plot-And-Navigate-A-Maze">Plot And Navigate A Maze<a class="anchor-link" href="#Plot-And-Navigate-A-Maze">&#182;</a></h1><h2 id="Robot-Motion-Planning-Capstone-Project">Robot Motion Planning Capstone Project<a class="anchor-link" href="#Robot-Motion-Planning-Capstone-Project">&#182;</a></h2><h2 id="John-Kinstler">John Kinstler<a class="anchor-link" href="#John-Kinstler">&#182;</a></h2><h3 id="Project-files-at-https://github.com/m00nd00r/MicroMouse">Project files at <a href="https://github.com/m00nd00r/MicroMouse">https://github.com/m00nd00r/MicroMouse</a><a class="anchor-link" href="#Project-files-at-https://github.com/m00nd00r/MicroMouse">&#182;</a></h3><h3 id="Project-Overview">Project Overview<a class="anchor-link" href="#Project-Overview">&#182;</a></h3><p>The goal of robot motion planning is to find a path for a robot to follow from a starting point to some distant waypoint without colliding with obstacles in the world (also called the configuration space) the robot is moving through. In this particular iteration I will be creating and testing algorithms to allow a robot mouse to plot and navigate a virtual maze.</p>
 <p>Motion planning has applications in autonomous and automation robotics, in video game artificial intelligence, architectural design, medicine and biology. It is further used in the nascent self-driving car industry.</p>
 <p>My own particular interest in this area arose from implementing reinforcement learning to teach a Smart Cab to learn the rules of the road for a previous project. Here, rather, different algorithms will be explored as a potential solution.</p>
-<h3 id="Problem-Statement">Problem Statement<a class="anchor-link" href="#Problem-Statement">&#194;&#182;</a></h3><p>This project takes inspiration from <a href="https://en.wikipedia.org/wiki/Micromouse">Micromouse</a> competitions, wherein a robot mouse is tasked with plotting a path from the lower left corner of the maze to a 4 square center where only one of the squares has an opening. The robot mouse may make 2 runs in a given maze. In the first run, the robot mouse tries to map out the maze to figure out the path to the center. In the second run, the robot mouse attempts to reach the center in the fastest time possible, using what it has previously learned.</p>
+<h3 id="Problem-Statement">Problem Statement<a class="anchor-link" href="#Problem-Statement">&#182;</a></h3><p>This project takes inspiration from <a href="https://en.wikipedia.org/wiki/Micromouse">Micromouse</a> competitions, wherein a robot mouse is tasked with plotting a path from the lower left corner of the maze to a 4 square center where only one of the squares has an opening. The robot mouse may make 2 runs in a given maze. In the first run, the robot mouse tries to map out the maze to figure out the path to the center. In the second run, the robot mouse attempts to reach the center in the fastest time possible, using what it has previously learned.</p>
 <p>In this project, I will create functions to control a virtual robot to navigate a virtual maze. A simplified model of the world is provided along with specifications for the maze and robot; the goal is to obtain the fastest times possible in a series of test mazes.</p>
 <p>There are a variety of motion planning algorithms which are detailed <a href="https://en.wikipedia.org/wiki/Motion_planning">here</a>. Some further discussion on this topic can be found <a href="http://www.gamasutra.com/blogs/MatthewKlingensmith/20130907/199787/Overview_of_Motion_Planning.php">here</a>, wherein the author describes 3 algorithms most commonly used to solve motion planning problems which are A* grid search, Visibility Graphs, and Flow Fields. Alternatively, I could explore more typical machine learning algorithms such as Neural Networks or Reinforcement Learning.</p>
 <p>This project will likely be best accomplished using the A* algorithm for which implementation guidance can be found <a href="http://www.redblobgames.com/">here</a>.</p>
-<p>I have also found another algorithm called <a href="https://en.wikipedia.org/wiki/D*#D.2A_Lite">D*-Lite</a> search which takes a bit of different approach to A*. The implementation I used for this D*-Lite was borrowed from Sebastian Thrun's AI-Robotics class on Udacity.</p>
+<p>I have also found another algorithm called <a href="https://en.wikipedia.org/wiki/D*#D.2A_Lite">D*-Lite</a> search which takes a bit of different approach to A* that uses dynamic programming. The implementation I used for this D*-Lite was borrowed from Sebastian Thrun's AI-Robotics class on Udacity.</p>
 
 </div>
 </div>
@@ -11798,14 +11798,13 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">tester</span><span class="o">,</span><span class="nn">tester_1</span>
 <span class="kn">import</span> <span class="nn">solve_maze</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">strategy_test</span> <span class="kn">as</span> <span class="nn">st</span>
 </pre></div>
 
@@ -11814,9 +11813,27 @@ div#notebook {
 </div>
 
 </div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Environment-Variables">Environment Variables<a class="anchor-link" href="#Environment-Variables">&#182;</a></h1><h3 id="TEST_REPORT-is-primarily-for-debugging,-but-can-also-help-to-understand-the-algorithm.">TEST_REPORT is primarily for debugging, but can also help to understand the algorithm.<a class="anchor-link" href="#TEST_REPORT-is-primarily-for-debugging,-but-can-also-help-to-understand-the-algorithm.">&#182;</a></h3><h3 id="COVERAGE_RESET_THRESHOLD-is-used-to-allow-the-robot-to-continue-exploring-the-maze-to-map-more-of-it-to-test-whether-better-results-can-be-achieved.-This-can-take-any-interger-value-from-1-to-100-or-'goal'.">COVERAGE_RESET_THRESHOLD is used to allow the robot to continue exploring the maze to map more of it to test whether better results can be achieved. This can take any interger value from 1 to 100 or 'goal'.<a class="anchor-link" href="#COVERAGE_RESET_THRESHOLD-is-used-to-allow-the-robot-to-continue-exploring-the-maze-to-map-more-of-it-to-test-whether-better-results-can-be-achieved.-This-can-take-any-interger-value-from-1-to-100-or-'goal'.">&#182;</a></h3><h3 id="MAP_STRATEGY-tells-the-robot-which-algorithm-to-use-while-exploring-the-maze.-It-can-take-options:">MAP_STRATEGY tells the robot which algorithm to use while exploring the maze. It can take options:<a class="anchor-link" href="#MAP_STRATEGY-tells-the-robot-which-algorithm-to-use-while-exploring-the-maze.-It-can-take-options:">&#182;</a></h3><ul>
+<li>'random' - when available, the robot chooses randomly between mulitple directions to move.</li>
+<li>'avoid dead ends' - the robot marks dead ends so it doesn't keep revisiting them or getting stuck.</li>
+<li>'smart map 1' - the robot follows the following rules to choose which direction to move:<br>
+   1) choose the cell that is least mapped<br>
+   2) choose the cell that is least visited<br>
+   3) choose the cell that is closest to the goal<br>
+   4) choose randomly  </li>
+<li>'smart map 2' - uses steps 1-3 of 'smart map 1' and instead of choosing randomly in step 4 it chooses from list of prescribed directions to move based on which quadrant it's in and whether or not it has found the goal.</li>
+</ul>
+<h3 id="MAPPER-tells-the-robot-whether-to-map-the-maze-one-cell-at-a-time-or-take-advantage-of-it's-sensor-data-to-map-cells-it-hasn't-yet-visited.-It-can-take-values-'mapper1'-or-'mapper2'">MAPPER tells the robot whether to map the maze one cell at a time or take advantage of it's sensor data to map cells it hasn't yet visited. It can take values 'mapper1' or 'mapper2'<a class="anchor-link" href="#MAPPER-tells-the-robot-whether-to-map-the-maze-one-cell-at-a-time-or-take-advantage-of-it's-sensor-data-to-map-cells-it-hasn't-yet-visited.-It-can-take-values-'mapper1'-or-'mapper2'">&#182;</a></h3><h3 id="The-environment-variables-below-will-tell-tester.py-to-run-without-producing-metric-reports,-tell-the-micromouse-robot-to-reset-to-run-2-as-soon-as-the-goal-is-found,-use-the-smart-map-strategy-function,-and-used-the-advanced-mapper.">The environment variables below will tell tester.py to run without producing metric reports, tell the micromouse robot to reset to run 2 as soon as the goal is found, use the smart map strategy function, and used the advanced mapper.<a class="anchor-link" href="#The-environment-variables-below-will-tell-tester.py-to-run-without-producing-metric-reports,-tell-the-micromouse-robot-to-reset-to-run-2-as-soon-as-the-goal-is-found,-use-the-smart-map-strategy-function,-and-used-the-advanced-mapper.">&#182;</a></h3>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TEST_REPORT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;False&#39;</span>
@@ -11834,13 +11851,13 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Choose-test-maze-1,-2,-3,-4-to-run.">Choose test maze 1, 2, 3, 4 to run.<a class="anchor-link" href="#Choose-test-maze-1,-2,-3,-4-to-run.">&#194;&#182;</a></h2>
+<h2 id="Choose-test_maze_01,-test_maze_02,-test_maze_03,-or-test_maze_04-to-run.">Choose test_maze_01, test_maze_02, test_maze_03, or test_maze_04 to run.<a class="anchor-link" href="#Choose-test_maze_01,-test_maze_02,-test_maze_03,-or-test_maze_04-to-run.">&#182;</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="o">%</span><span class="k">run</span> tester.py test_maze_04.txt
@@ -11850,12 +11867,34 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Starting run 0.
+Ending first run. Starting next run.
+Starting run 1.
+Goal found; run 1 completed!
+Task complete! Score: 79.667
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="The-following-2-code-cells-are-necessary-to-run-for-loading/reloading-any-scripts-that-are-modified-that-get-called-by-other-scripts.">The following 2 code cells are necessary to run for loading/reloading any scripts that are modified that get called by other scripts.<a class="anchor-link" href="#The-following-2-code-cells-are-necessary-to-run-for-loading/reloading-any-scripts-that-are-modified-that-get-called-by-other-scripts.">&#194;&#182;</a></h2><p>For instance, when running tester_1.py, if any change is made to robot, one of the code blocks below must be run to see the changes to robot that get called by tester_1.py.</p>
+<h2 id="The-following-2-code-cells-are-necessary-to-run-for-loading/reloading-any-scripts-that-are-modified-that-get-called-by-other-scripts.">The following 2 code cells are necessary to run for loading/reloading any scripts that are modified that get called by other scripts.<a class="anchor-link" href="#The-following-2-code-cells-are-necessary-to-run-for-loading/reloading-any-scripts-that-are-modified-that-get-called-by-other-scripts.">&#182;</a></h2><p>For instance, when running tester_1.py, if any change is made to robot, one of the code blocks below must be run to see the changes to robot that get called by tester_1.py.</p>
 
 </div>
 </div>
@@ -11892,7 +11931,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="COVERAGE_RESET_THRESHOLD">COVERAGE_RESET_THRESHOLD<a class="anchor-link" href="#COVERAGE_RESET_THRESHOLD">&#194;&#182;</a></h2><h2 id="Enter-a-percentage-(1---100)-of-the-total-maze-to-map-before-resetting-to-run-2.">Enter a percentage (1 - 100) of the total maze to map before resetting to run 2.<a class="anchor-link" href="#Enter-a-percentage-(1---100)-of-the-total-maze-to-map-before-resetting-to-run-2.">&#194;&#182;</a></h2><h2 id="To-reset-the-robot-upon-finding-the-goal-enter-'goal'.-Default-will-be-goal.">To reset the robot upon finding the goal enter 'goal'. Default will be goal.<a class="anchor-link" href="#To-reset-the-robot-upon-finding-the-goal-enter-'goal'.-Default-will-be-goal.">&#194;&#182;</a></h2>
+<h2 id="COVERAGE_RESET_THRESHOLD">COVERAGE_RESET_THRESHOLD<a class="anchor-link" href="#COVERAGE_RESET_THRESHOLD">&#182;</a></h2><h2 id="Enter-a-percentage-(1---100)-of-the-total-maze-to-map-before-resetting-to-run-2.">Enter a percentage (1 - 100) of the total maze to map before resetting to run 2.<a class="anchor-link" href="#Enter-a-percentage-(1---100)-of-the-total-maze-to-map-before-resetting-to-run-2.">&#182;</a></h2><h2 id="To-reset-the-robot-upon-finding-the-goal-enter-'goal'.-Default-will-be-goal.">To reset the robot upon finding the goal enter 'goal'. Default will be goal.<a class="anchor-link" href="#To-reset-the-robot-upon-finding-the-goal-enter-'goal'.-Default-will-be-goal.">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -11911,7 +11950,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;COVERAGE_RESET_THRESHOLD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;goal&#39;</span>
@@ -11926,7 +11965,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="MAP_STRATEGY">MAP_STRATEGY<a class="anchor-link" href="#MAP_STRATEGY">&#194;&#182;</a></h2><h2 id="Enter-an-explore()-controller-to-use-for-mapping-the-maze:">Enter an explore() controller to use for mapping the maze:<a class="anchor-link" href="#Enter-an-explore()-controller-to-use-for-mapping-the-maze:">&#194;&#182;</a></h2><h2 id="'random',-'avoid-dead-ends',-'smart-map-1',-'smart-map-2'">'random', 'avoid dead ends', 'smart map 1', 'smart map 2'<a class="anchor-link" href="#'random',-'avoid-dead-ends',-'smart-map-1',-'smart-map-2'">&#194;&#182;</a></h2><h2 id="Default-will-be-smart-map-2.">Default will be smart map 2.<a class="anchor-link" href="#Default-will-be-smart-map-2.">&#194;&#182;</a></h2>
+<h2 id="MAP_STRATEGY">MAP_STRATEGY<a class="anchor-link" href="#MAP_STRATEGY">&#182;</a></h2><h2 id="Enter-an-explore()-controller-to-use-for-mapping-the-maze:">Enter an explore() controller to use for mapping the maze:<a class="anchor-link" href="#Enter-an-explore()-controller-to-use-for-mapping-the-maze:">&#182;</a></h2><h2 id="'random',-'avoid-dead-ends',-'smart-map-1',-'smart-map-2'">'random', 'avoid dead ends', 'smart map 1', 'smart map 2'<a class="anchor-link" href="#'random',-'avoid-dead-ends',-'smart-map-1',-'smart-map-2'">&#182;</a></h2><h2 id="Default-will-be-smart-map-2.">Default will be smart map 2.<a class="anchor-link" href="#Default-will-be-smart-map-2.">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -11971,7 +12010,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MAP_STRATEGY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;smart map 2&#39;</span>
@@ -11986,7 +12025,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="TEST_REPORT">TEST_REPORT<a class="anchor-link" href="#TEST_REPORT">&#194;&#182;</a></h2><h2 id="Set-to-True-if-you-want-tester_1.py-to-return-reporting-on-performance.-Default-is-False.">Set to True if you want tester_1.py to return reporting on performance. Default is False.<a class="anchor-link" href="#Set-to-True-if-you-want-tester_1.py-to-return-reporting-on-performance.-Default-is-False.">&#194;&#182;</a></h2>
+<h2 id="TEST_REPORT">TEST_REPORT<a class="anchor-link" href="#TEST_REPORT">&#182;</a></h2><h2 id="Set-to-True-if-you-want-tester_1.py-to-return-reporting-on-performance.-Default-is-False.">Set to True if you want tester_1.py to return reporting on performance. Default is False.<a class="anchor-link" href="#Set-to-True-if-you-want-tester_1.py-to-return-reporting-on-performance.-Default-is-False.">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -12005,7 +12044,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TEST_REPORT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span>
@@ -12020,7 +12059,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="MAPPER">MAPPER<a class="anchor-link" href="#MAPPER">&#194;&#182;</a></h2><h2 id="Robot-maps-1-cell-at-a-time-or-as-many-as-possible-based-on-sensor-values:">Robot maps 1 cell at a time or as many as possible based on sensor values:<a class="anchor-link" href="#Robot-maps-1-cell-at-a-time-or-as-many-as-possible-based-on-sensor-values:">&#194;&#182;</a></h2><h2 id="'mapper-1',-'mapper-2'">'mapper 1', 'mapper 2'<a class="anchor-link" href="#'mapper-1',-'mapper-2'">&#194;&#182;</a></h2>
+<h2 id="MAPPER">MAPPER<a class="anchor-link" href="#MAPPER">&#182;</a></h2><h2 id="Robot-maps-1-cell-at-a-time-or-as-many-as-possible-based-on-sensor-values:">Robot maps 1 cell at a time or as many as possible based on sensor values:<a class="anchor-link" href="#Robot-maps-1-cell-at-a-time-or-as-many-as-possible-based-on-sensor-values:">&#182;</a></h2><h2 id="'mapper-1',-'mapper-2'">'mapper 1', 'mapper 2'<a class="anchor-link" href="#'mapper-1',-'mapper-2'">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -12039,7 +12078,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;MAPPER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;mapper2&#39;</span>
@@ -12054,13 +12093,13 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Choose-test-maze-1,-2,-3,-4-to-run.">Choose test maze 1, 2, 3, 4 to run.<a class="anchor-link" href="#Choose-test-maze-1,-2,-3,-4-to-run.">&#194;&#182;</a></h2>
+<h2 id="Choose-test-maze-1,-2,-3,-4-to-run.">Choose test maze 1, 2, 3, 4 to run.<a class="anchor-link" href="#Choose-test-maze-1,-2,-3,-4-to-run.">&#182;</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="o">%</span><span class="k">run</span> tester_1.py test_maze_01.txt
@@ -12070,12 +12109,94 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Coverage reset threshold set to goal.
+Maze map strategy used is smart map 2.
+
+Mapper method is mapper2.
+
+Starting run 0.
+
+Found Goal in 73 moves.
+Percent of cell walls mapped until goal found is 70%.
+
+Number of walls mapped per cell:
+[3  1  1  1  1  1  1  1  2  3  4  4]
+[3  0  0  0  0  0  0  3  4  4  4  4]
+[3  0  0  0  2  2  3  4  4  3  3  4]
+[3  0  1  1  4  3  4  4  4  4  4  4]
+[3  3  4  4  4  4  4  3  3  4  2  2]
+[4  4  4  4  4  3  4  4  4  4  1  1]
+[4  4  4  4  4  2  3  4  4  3  0  1]
+[4  4  4  4  4  4  4  3  2  2  0  1]
+[4  4  4  4  4  4  4  4  3  0  0  1]
+[4  4  4  4  4  4  4  4  3  0  0  1]
+[4  4  4  4  4  4  4  4  1  0  0  1]
+[4  4  4  4  4  4  4  3  1  1  1  2]
+
+Percent of total walls mapped during explore is 70%.
+Total number of moves for 1st run is 73.
+
+Number of times each cell visited:
+[ 0  0  0  0  0  0  0  0  0  0  1  1]
+[ 0  0  0  0  0  0  0  0  1  1  1  1]
+[ 0  0  0  0  0  0  0  1  1  0  0  1]
+[ 0  0  0  0  0  0  1  1  0  1  1  1]
+[ 0  0  1  1  1  1  1  0  0  1  0  0]
+[ 0  1  1  1  1  0  1  1  1  1  0  0]
+[ 0  1  1  2  1  0  0  1  1  0  0  0]
+[ 0  2  1  2  2  1  1  0  0  0  0  0]
+[ 0  2  2  2  0  0  1  1  0  0  0  0]
+[ 1  1  1  2  1  1  0  1  0  0  0  0]
+[ 1  0  1  1  1  1  1  1  0  0  0  0]
+[ 1  0  1  1  1  1  1  0  0  0  0  0]
+
+
+Ending first run. Starting next run.
+Starting run 1.
+
+Route to goal:
+[-  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  R  R  -  -]
+[-  -  -  -  -  -  -  R  L  #  -  -]
+[-  -  -  -  R  #  #  L  -  #  -  -]
+[-  -  -  -  #  -  -  -  -  #  -  -]
+[R  #  R  -  #  -  G  L  L  R  -  -]
+[#  -  L  R  #  -  -  R  R  -  -  -]
+[#  -  -  L  L  -  -  -  -  -  -  -]
+[#  -  -  -  -  -  -  -  -  -  -  -]
+[#  -  -  -  -  -  -  -  -  -  -  -]
+[#  -  -  -  -  -  -  -  -  -  -  -]
+[S  -  -  -  -  -  -  -  -  -  -  -]
+
+Total length of route is 33 grid cells.
+Total movements to goal is 23.
+Total rotations to goal is 18.
+Total compute time is 0.08428 seconds.
+Goal found; run 1 completed!
+Task complete! Score: 25.433
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Use-the-command-below-to-open-a-window-that-overlays-the-goal-route-onto-the-maze.">Use the command below to open a window that overlays the goal route onto the maze.<a class="anchor-link" href="#Use-the-command-below-to-open-a-window-that-overlays-the-goal-route-onto-the-maze.">&#194;&#182;</a></h2><p>Either Jupyter or Anaconda is not able to re-open the turtle window with repeated calls. So, it has to be run through the command shell.</p>
+<h2 id="Use-the-command-below-to-open-a-window-that-overlays-the-goal-route-onto-the-maze.">Use the command below to open a window that overlays the goal route onto the maze.<a class="anchor-link" href="#Use-the-command-below-to-open-a-window-that-overlays-the-goal-route-onto-the-maze.">&#182;</a></h2><p>Either Jupyter or Anaconda is not able to re-open the turtle window with repeated calls. So, it has to be run through the command shell.</p>
 <p>Click anywhere in the open turtle window to close it.</p>
 
 </div>
@@ -12083,7 +12204,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="o">!</span>python tester_1.py test_maze_03.txt showroute
@@ -12093,12 +12214,106 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Coverage reset threshold set to goal.
+Maze map strategy used is smart map 2.
+
+Mapper method is mapper2.
+
+Starting run 0.
+
+Found Goal in 168 moves.
+Percent of cell walls mapped until goal found is 81%.
+
+Number of walls mapped per cell:
+[3  3  3  4  4  4  4  4  3  2  1  1  1  1  1  2]
+[1  2  2  4  4  4  4  4  4  3  0  0  0  0  0  1]
+[1  0  2  4  4  4  4  4  4  4  3  3  4  2  2  2]
+[1  0  1  4  4  4  4  4  4  4  4  4  4  3  3  4]
+[1  0  0  1  2  2  4  4  4  4  4  4  4  4  4  4]
+[1  0  0  0  1  2  4  4  4  4  4  4  4  4  4  4]
+[1  0  1  2  4  4  4  3  4  4  4  4  4  4  4  4]
+[1  1  4  4  4  4  4  0  3  4  4  4  4  4  4  4]
+[1  0  3  4  3  4  4  3  4  4  4  4  4  4  4  4]
+[1  2  4  4  1  3  4  4  4  4  4  4  4  3  4  4]
+[1  1  4  4  2  1  4  4  4  4  4  4  2  4  4  4]
+[3  3  4  4  4  2  1  3  4  4  4  4  3  1  3  4]
+[4  4  4  4  4  4  3  3  4  4  4  4  4  4  4  4]
+[4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4]
+[4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4]
+[4  4  4  4  4  4  4  4  4  4  4  4  4  4  4  4]
+
+Percent of total walls mapped during explore is 81%.
+Total number of moves for 1st run is 168.
+
+Number of times each cell visited:
+[ 0  0  0  1  1  1  1  1  0  0  0  0  0  0  0  0]
+[ 0  0  0  1  1  1  1  1  1  0  0  0  0  0  0  0]
+[ 0  0  0  1  1  1  1  1  1  1  0  0  0  0  0  0]
+[ 0  0  0  1  1  2  2  2  1  1  1  1  1  0  0  0]
+[ 0  0  0  0  0  0  2  2  1  1  1  1  1  1  1  0]
+[ 0  0  0  0  0  0  1  1  2  1  1  1  0  0  1  0]
+[ 0  0  0  0  1  1  1  0  2  2  2  1  1  1  1  0]
+[ 0  0  2  2  1  1  0  0  0  1  1  1  0  0  0  0]
+[ 0  0  0  2  0  1  1  0  1  1  1  1  1  1  1  0]
+[ 0  0  1  2  0  0  2  2  1  1  1  1  0  0  1  0]
+[ 0  0  1  1  0  0  1  1  1  0  1  1  0  0  1  1]
+[ 0  0  1  1  1  0  0  0  1  1  1  0  0  0  0  1]
+[ 1  1  2  1  1  2  0  0  0  1  1  1  1  1  0  1]
+[ 1  1  2  2  2  2  1  1  1  1  1  1  1  1  0  1]
+[ 1  1  0  0  0  1  1  1  1  1  1  1  1  1  1  1]
+[ 1  1  1  1  1  1  0  1  1  1  1  1  0  0  0  0]
+
+
+Ending first run. Starting next run.
+Starting run 1.
+
+Route to goal:
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -]
+[-  -  -  -  -  -  -  -  -  -  -  L  #  #  #  L]
+[-  -  -  -  -  -  -  -  G  -  L  R  -  -  -  #]
+[-  -  -  -  -  -  -  -  R  #  R  -  -  -  -  #]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  #]
+[-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  #]
+[R  #  R  -  -  -  -  -  -  -  -  -  -  -  -  #]
+[#  L  R  -  -  -  R  #  #  #  R  -  -  -  -  #]
+[#  #  -  -  -  R  L  L  #  #  R  -  -  -  -  #]
+[S  L  #  #  #  L  -  L  #  #  #  #  #  #  #  L]
+
+Total length of route is 52 grid cells.
+Total movements to goal is 34.
+Total rotations to goal is 25.
+Total compute time is 0.07561 seconds.
+Goal found; run 1 completed!
+Task complete! Score: 39.600
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Use-the-command-below-to-run-the-solve_maze.py-program.">Use the command below to run the solve_maze.py program.<a class="anchor-link" href="#Use-the-command-below-to-run-the-solve_maze.py-program.">&#194;&#182;</a></h2><h2 id="This-will-take-any-maze-in-the-particular-format-for-this-project-and-generate-a-map-of-the-maze-that-can-be-used-by-the-A*-search-algorithm-to-find-the-shortest-route.">This will take any maze in the particular format for this project and generate a map of the maze that can be used by the A* search algorithm to find the shortest route.<a class="anchor-link" href="#This-will-take-any-maze-in-the-particular-format-for-this-project-and-generate-a-map-of-the-maze-that-can-be-used-by-the-A*-search-algorithm-to-find-the-shortest-route.">&#194;&#182;</a></h2><p>This is used to help determine whether the robot's mapping and planning algorithms found the fastest possible route.</p>
+<h2 id="Use-the-command-below-to-run-the-solve_maze.py-program.">Use the command below to run the solve_maze.py program.<a class="anchor-link" href="#Use-the-command-below-to-run-the-solve_maze.py-program.">&#182;</a></h2><h2 id="This-will-take-any-maze-in-the-particular-format-for-this-project-and-generate-a-map-of-the-maze-that-can-be-used-by-the-A*-search-algorithm-to-find-the-shortest-route.">This will take any maze in the particular format for this project and generate a map of the maze that can be used by the A* search algorithm to find the shortest route.<a class="anchor-link" href="#This-will-take-any-maze-in-the-particular-format-for-this-project-and-generate-a-map-of-the-maze-that-can-be-used-by-the-A*-search-algorithm-to-find-the-shortest-route.">&#182;</a></h2><p>This is used to help determine whether the robot's mapping and planning algorithms found the fastest possible route.</p>
 <p>There is also a D* Lite search implementation that can be used to verify A*.</p>
 
 </div>
@@ -12106,7 +12321,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="o">%</span><span class="k">run</span> solve_maze test_maze_04.txt
@@ -12116,18 +12331,58 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[R  #  #  #  #  #  #  #  #  #  #  R  -  -  -  -]
+[#  -  -  -  -  -  -  -  -  -  -  #  -  -  -  -]
+[#  -  -  -  -  -  -  -  -  -  -  #  -  -  R  R]
+[R  L  -  -  -  -  -  -  -  -  -  L  #  #  L  #]
+[-  #  -  -  -  -  L  #  #  L  -  -  -  -  -  #]
+[R  L  -  -  -  -  #  R  #  L  -  -  -  -  -  #]
+[#  -  -  -  -  -  #  R  #  L  -  -  -  -  -  #]
+[#  -  -  -  -  -  #  -  -  #  -  -  -  -  -  #]
+[#  -  -  -  -  -  L  G  -  #  -  -  -  -  -  #]
+[#  -  -  -  -  -  -  -  -  #  -  -  -  -  -  #]
+[R  L  -  -  -  -  -  -  -  #  -  -  -  -  -  #]
+[R  L  -  -  -  -  -  -  -  #  -  -  L  #  #  R]
+[#  -  -  -  -  -  -  R  #  L  -  -  #  -  -  -]
+[#  -  -  -  -  -  -  #  -  -  -  -  #  -  -  -]
+[#  -  -  -  -  R  #  L  -  -  -  -  L  #  #  R]
+[S  -  -  -  -  R  #  #  #  #  #  #  #  #  #  R]
+
+Total length of route is 95 grid cells.
+Total movements to goal is 61.
+Total rotations required is 31.
+Straightness of route is 0.673684210526.
+Routing cost is 0.968421052632.
+Total compute time is 0.05731 seconds.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Use-the-command-below-to-overlay-the-best-route-for-any-maze-onto-the-turtle-window-display-of-the-maze.">Use the command below to overlay the best route for any maze onto the turtle window display of the maze.<a class="anchor-link" href="#Use-the-command-below-to-overlay-the-best-route-for-any-maze-onto-the-turtle-window-display-of-the-maze.">&#194;&#182;</a></h2>
+<h2 id="Use-the-command-below-to-overlay-the-best-route-for-any-maze-onto-the-turtle-window-display-of-the-maze.">Use the command below to overlay the best route for any maze onto the turtle window display of the maze.<a class="anchor-link" href="#Use-the-command-below-to-overlay-the-best-route-for-any-maze-onto-the-turtle-window-display-of-the-maze.">&#182;</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="o">!</span>python solve_maze.py test_maze_04.txt showroute
@@ -12137,18 +12392,42 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+Total length of route is 95 grid cells.
+Total movements to goal is 61.
+Total rotations required is 31.
+Straightness of route is 0.673684210526.
+Routing cost is 0.968421052632.
+Total compute time is 29.67 seconds.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="The-function-below-is-used-to-test-the-random_explore()-and-avoid_dead_end_explore()-methods-along-with-the-update_map1()-and-update_map2()-methods-with-each-one.">The function below is used to test the random_explore() and avoid_dead_end_explore() methods along with the update_map1() and update_map2() methods with each one.<a class="anchor-link" href="#The-function-below-is-used-to-test-the-random_explore()-and-avoid_dead_end_explore()-methods-along-with-the-update_map1()-and-update_map2()-methods-with-each-one.">&#194;&#182;</a></h2>
+<h2 id="The-function-below-is-used-to-test-the-random_explore()-and-avoid_dead_end_explore()-methods-along-with-the-update_map1()-and-update_map2()-methods-with-each-one.">The function below is used to test the random_explore() and avoid_dead_end_explore() methods along with the update_map1() and update_map2() methods with each one.<a class="anchor-link" href="#The-function-below-is-used-to-test-the-random_explore()-and-avoid_dead_end_explore()-methods-along-with-the-update_map1()-and-update_map2()-methods-with-each-one.">&#182;</a></h2><h3 id="These-results-are-used-to-develop-a-benchmark-basis-for-evaluating-the-different-algorithms.">These results are used to develop a benchmark basis for evaluating the different algorithms.<a class="anchor-link" href="#These-results-are-used-to-develop-a-benchmark-basis-for-evaluating-the-different-algorithms.">&#182;</a></h3>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">st</span><span class="o">.</span><span class="n">trials</span><span class="p">(</span><span class="s1">&#39;test_maze_01.txt&#39;</span><span class="p">,</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">500</span><span class="p">)</span>
@@ -12158,10 +12437,51 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Running the random explorer and the mapper1 mapper through 500 trials on test_maze_01.txt:
+robot failed to find goal 68 times with average score of 38.4448036952
+robot&#39;s best score is 25.4666666667 and worst score is 57.2666666667.
+
+Running the random explorer and the mapper2 mapper through 500 trials on test_maze_01.txt:
+robot failed to find goal 73 times with average score of 36.1377725857
+robot&#39;s best score is 24.6 and worst score is 56.1666666667.
+
+Running the avoid dead ends explorer and the mapper1 mapper through 500 trials on test_maze_01.txt:
+robot failed to find goal 51 times with average score of 37.8882962963
+robot&#39;s best score is 25.2333333333 and worst score is 58.6.
+
+Running the avoid dead ends explorer and the mapper2 mapper through 500 trials on test_maze_01.txt:
+robot failed to find goal 51 times with average score of 35.9502962963
+robot&#39;s best score is 24.6 and worst score is 55.9666666667.
+
+Running the smart map 1 explorer and the mapper1 mapper through 500 trials on test_maze_01.txt:
+robot failed to find goal 0 times with average score of 30.3422488357
+robot&#39;s best score is 27.1666666667 and worst score is 33.5333333333.
+
+Running the smart map 1 explorer and the mapper2 mapper through 500 trials on test_maze_01.txt:
+robot failed to find goal 0 times with average score of 26.3073852295
+robot&#39;s best score is 25.4333333333 and worst score is 33.7666666667.
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">st</span><span class="o">.</span><span class="n">trials</span><span class="p">(</span><span class="s1">&#39;test_maze_02.txt&#39;</span><span class="p">,</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">500</span><span class="p">)</span>
@@ -12171,10 +12491,51 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Running the random explorer and the mapper1 mapper through 500 trials on test_maze_02.txt:
+robot failed to find goal 147 times with average score of 50.8512241055
+robot&#39;s best score is 36.6 and worst score is 74.2666666667.
+
+Running the random explorer and the mapper2 mapper through 500 trials on test_maze_02.txt:
+robot failed to find goal 167 times with average score of 47.3294411178
+robot&#39;s best score is 33.5666666667 and worst score is 64.1333333333.
+
+Running the avoid dead ends explorer and the mapper1 mapper through 500 trials on test_maze_02.txt:
+robot failed to find goal 144 times with average score of 50.3399626517
+robot&#39;s best score is 33.7333333333 and worst score is 68.8666666667.
+
+Running the avoid dead ends explorer and the mapper2 mapper through 500 trials on test_maze_02.txt:
+robot failed to find goal 140 times with average score of 47.0783933518
+robot&#39;s best score is 33.9333333333 and worst score is 64.1666666667.
+
+Running the smart map 1 explorer and the mapper1 mapper through 500 trials on test_maze_02.txt:
+robot failed to find goal 0 times with average score of 49.2322687957
+robot&#39;s best score is 38.9 and worst score is 61.2.
+
+Running the smart map 1 explorer and the mapper2 mapper through 500 trials on test_maze_02.txt:
+robot failed to find goal 0 times with average score of 38.6075848303
+robot&#39;s best score is 34.4 and worst score is 52.4666666667.
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">st</span><span class="o">.</span><span class="n">trials</span><span class="p">(</span><span class="s1">&#39;test_maze_03.txt&#39;</span><span class="p">,</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">500</span><span class="p">)</span>
@@ -12184,10 +12545,51 @@ div#notebook {
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Running the random explorer and the mapper1 mapper through 500 trials on test_maze_03.txt:
+robot failed to find goal 152 times with average score of 51.8262655205
+robot&#39;s best score is 35.9666666667 and worst score is 79.9.
+
+Running the random explorer and the mapper2 mapper through 500 trials on test_maze_03.txt:
+robot failed to find goal 146 times with average score of 49.2731455399
+robot&#39;s best score is 34.5333333333 and worst score is 65.6.
+
+Running the avoid dead ends explorer and the mapper1 mapper through 500 trials on test_maze_03.txt:
+robot failed to find goal 138 times with average score of 51.2981634527
+robot&#39;s best score is 36.2333333333 and worst score is 73.8333333333.
+
+Running the avoid dead ends explorer and the mapper2 mapper through 500 trials on test_maze_03.txt:
+robot failed to find goal 155 times with average score of 49.5665703276
+robot&#39;s best score is 35.4666666667 and worst score is 65.8.
+
+Running the smart map 1 explorer and the mapper1 mapper through 500 trials on test_maze_03.txt:
+robot failed to find goal 0 times with average score of 49.0427811045
+robot&#39;s best score is 43.2333333333 and worst score is 71.5333333333.
+
+Running the smart map 1 explorer and the mapper2 mapper through 500 trials on test_maze_03.txt:
+robot failed to find goal 0 times with average score of 40.3904191617
+robot&#39;s best score is 39.2666666667 and worst score is 51.6333333333.
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">st</span><span class="o">.</span><span class="n">trials</span><span class="p">(</span><span class="s1">&#39;test_maze_04.txt&#39;</span><span class="p">,</span> <span class="n">num</span> <span class="o">=</span> <span class="mi">500</span><span class="p">)</span>
@@ -12197,16 +12599,44 @@ div#notebook {
 </div>
 </div>
 
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span> 
-</pre></div>
+<div class="output_wrapper">
+<div class="output">
 
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Running the random explorer and the mapper1 mapper through 500 trials on test_maze_04.txt:
+robot failed to find goal 250 times with average score of 87.6796812749
+robot&#39;s best score is 68.1 and worst score is 115.233333333.
+
+Running the random explorer and the mapper2 mapper through 500 trials on test_maze_04.txt:
+robot failed to find goal 235 times with average score of 84.0266917293
+robot&#39;s best score is 68.6 and worst score is 102.2.
+
+Running the avoid dead ends explorer and the mapper1 mapper through 500 trials on test_maze_04.txt:
+robot failed to find goal 213 times with average score of 87.3180555556
+robot&#39;s best score is 69.4333333333 and worst score is 126.8.
+
+Running the avoid dead ends explorer and the mapper2 mapper through 500 trials on test_maze_04.txt:
+robot failed to find goal 210 times with average score of 84.4564719359
+robot&#39;s best score is 68.2666666667 and worst score is 104.566666667.
+
+Running the smart map 1 explorer and the mapper1 mapper through 500 trials on test_maze_04.txt:
+robot failed to find goal 0 times with average score of 80.9380572189
+robot&#39;s best score is 76.9333333333 and worst score is 90.2333333333.
+
+Running the smart map 1 explorer and the mapper2 mapper through 500 trials on test_maze_04.txt:
+robot failed to find goal 0 times with average score of 81.2608782435
+robot&#39;s best score is 74.0666666667 and worst score is 91.0.
+
+</pre>
 </div>
+</div>
+
 </div>
 </div>
 

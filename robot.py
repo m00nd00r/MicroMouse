@@ -22,10 +22,7 @@ rotation_index = [-1, 0, 1]
 class Robot(object):
     def __init__(self, maze_dim):
         '''
-        Use the initialization function to set up attributes that your robot
-        will use to learn and navigate the maze. Some initial attributes are
-        provided based on common information, including the size of the maze
-        the robot is placed in.
+        Initialize each robot instance.
         '''
 
         self.start_time = time.clock()
@@ -87,19 +84,6 @@ class Robot(object):
             self.testing = True
         else:
             self.testing = False
-        
-        #try:
-        #    #self.reset_threshold = int(sys.argv[2]) #Check if user entered a reset threshold
-        #    movement = os.environ['MOVEMENT_RESET_THRESHOLD']
-        #except:
-        #    movement = '' #If reset threshold not entered, use this default
-        #if isinstance(movement,(int,long)):
-        #    if movement < 1000 and movement > 0:
-        #        self.movement_reset_threshold = movement
-        #        if self.testing: print 'Movement reset threshold set to {}.'.format(movement)
-        #else:
-        #    self.movement_reset_threshold = default
-        #    if self.testing: print 'Movement reset threshold set to default = {}.'.format(default)
             
         try:
             coverage = os.environ['COVERAGE_RESET_THRESHOLD']
@@ -148,19 +132,23 @@ class Robot(object):
             
     def next_move(self, sensors):
         '''
-        Use this function to determine the next move the robot should make,
-        based on the input from the sensors after its previous move. Sensor
-        inputs are a list of three distances from the robot's left, front, and
+        This function is used to determine the next move the robot should make,
+        based on the input from the sensors after its previous move.
+        
+        Sensor inputs are a list of three distances from the robot's left, front, and
         right-facing sensors, in that order.
+        
         Outputs should be a tuple of two values. The first value indicates
         robot rotation (if any), as a number: 0 for no rotation, +90 for a
         90-degree rotation clockwise, and -90 for a 90-degree rotation
         counterclockwise. Other values will result in no rotation. The second
         value indicates robot movement, and the robot will attempt to move the
         number of indicated squares: a positive number indicates forwards
-        movement, while a negative number indicates backwards movement. The
-        robot may move a maximum of three units per turn. Any excess movement
+        movement, while a negative number indicates backwards movement.
+        
+        The robot may move a maximum of three units per turn. Any excess movement
         is ignored.
+        
         If the robot wants to end a run (e.g. during the first training run in
         the maze) then returing the tuple ('Reset', 'Reset') will indicate to
         the tester to end the run and return the robot to the start.
@@ -220,7 +208,7 @@ class Robot(object):
             self.location = self.start
             self.heading = 'u'
             self.goal_route = []
-            self.goal_route = self.a_star_search1(self.start, self.goal_door_location)
+            self.goal_route = self.a_star_search(self.start, self.goal_door_location)
             #self.goal_route = self.d_star_lite_search()
             self.action_list = []
             self.action_list.append('S')
@@ -246,6 +234,9 @@ class Robot(object):
 ### 
 ###
     def reporting(self, report):
+        '''
+            Reporting function to return a variety of information for debugging.
+        '''
         if report == 'exploring':
             print '\nFound Goal in {} moves.'.format(self.steps)
             print 'Percent of cell walls mapped until goal found is {:.0%}.'.format(self.is_mapped())
@@ -273,7 +264,9 @@ class Robot(object):
             print 'Rotate count is {}\n'.format(self.rotate_count)
     
     def init_maps(self):
-        '''Initialize the maze_map and the count_map'''
+        '''
+            Initialize the maze_map and the count_map
+        '''
         
         for i in range(self.maze_dim):
             for j in range(self.maze_dim):
@@ -291,7 +284,9 @@ class Robot(object):
         return
 
     def is_mapped(self,level = 100):
-        '''Check to see what percentage of the maze walls have been mapped.'''
+        '''
+            Check to see what percentage of the maze walls have been mapped.
+        '''
         
         walls = []
         #Loop through maze_map and count number of walls that have been mapped
@@ -323,7 +318,9 @@ class Robot(object):
             print '[%s]'%'  '.join(map(str,printgrid[i]))
             
     def print_map1(self,pmap):
-        '''Function to print the map dictionary as an array.'''
+        '''
+            Function to print the map dictionary as an array.
+        '''
         
         grid = []
         for i in reversed(range(self.maze_dim)):
@@ -341,7 +338,9 @@ class Robot(object):
         return
         
     def print_map2(self,vmap):
-        '''Function to visualize value and policy dictionaries in D* Lite'''
+        '''
+            Function to visualize value and policy dictionaries in D* Lite
+        '''
         
         grids = {'u':{},'r':{},'d':{},'l':{}}
         for orientation in grids:
@@ -363,7 +362,9 @@ class Robot(object):
         return
                 
     def print_map3(self,cmap):
-        '''Function to print the count map dictionary as an array.'''
+        '''
+            Function to print the count map dictionary as an array.
+        '''
         
         grid = []
         for i in reversed(range(self.maze_dim)):
@@ -380,7 +381,9 @@ class Robot(object):
         return
     
     def goal_door(self):
-        '''Function to determine whether the goal door has been found and what its location is.'''
+        '''
+            Function to determine whether the goal door has been found and what its location is.
+        '''
         
         if self.location[0] in self.goal_bounds and self.location[1] in self.goal_bounds:
             goal_door_location = self.location
@@ -390,7 +393,9 @@ class Robot(object):
         return goal_door_location
     
     def update_position(self, rot, mov):
-        '''Use the values of the rotation and movement variables to track the robot's position.'''
+        '''
+            Use the values of the rotation and movement variables to track the robot's position.
+        '''
         
         #Assign location to prev_location before updating
         self.prev_location = self.location
@@ -421,7 +426,9 @@ class Robot(object):
         return
     
     def update_maze_map1(self):
-        '''For random exploration mapping that doesn't update any map cell that hasn't been visited by robot.'''
+        '''
+            For random exploration mapping that doesn't update any map cell that hasn't been visited by robot.
+        '''
         
         #Update map with current location and wall sensor values.
         self.maze_map[self.location].update(dict((h,i) for h,i in zip(dir_sensors[self.heading],self.sensors)))
@@ -440,7 +447,9 @@ class Robot(object):
         return
     
     def update_maze_map2(self):
-        '''For smart_map exploration where sensor values are used to update map cells that haven't been directly visited by robot.'''
+        '''
+            For smart_map exploration where sensor values are used to update map cells that haven't been directly visited by robot.
+        '''
         
         #Update the current location with the distances to the walls in each direction
         self.maze_map[self.location].update(dict((h,i) for h,i in zip(dir_sensors[self.heading],self.sensors)))
@@ -468,14 +477,18 @@ class Robot(object):
         return
     
     def update_count_map(self):
-        '''Keep track of the number of times the robot visits each cell.'''
+        '''
+            Keep track of the number of times the robot visits each cell.
+        '''
         
         self.count_map[self.location] = self.count_map.get(self.location,0) + 1
         
         return
     
     def dead_ends(self):
-        '''Check for cells that don't lead to a dead end.'''
+        '''
+            Check for cells that don't lead to a dead end.
+        '''
         
         open_dirs = [] #Directions available to move from current location
         neighbor_cells = [] #Neighbor cells in the open_dirs list of available headings
@@ -493,8 +506,10 @@ class Robot(object):
         return no_dead_ends,open_cells
     
     def map_strategy(self):
-        '''Create a strategy for choosing which of mulitple available cells to move into based on moving
-           counter-clockwise around the grid and reaching the boundaries.'''
+        '''
+            Create a strategy for choosing which of mulitple available cells to move into based on moving
+            counter-clockwise around the grid and reaching the boundaries.
+        '''
         
         if not self.goal:
             if self.quad_list[0]:
@@ -518,8 +533,13 @@ class Robot(object):
         return
             
     def nearest_unmapped(self):
-        '''Search through expanding rings of neighbors of current location to find the nearest unvisited cell.'''
+        '''
+            Search through expanding rings of neighbors of current location to find the nearest unvisited cell.
+            
+            This function has yet to be implemented.
+        '''
         
+        # This code needs explanation.
         x = self.location[0]
         y = self.location[1]
         cell_list = []
@@ -547,7 +567,9 @@ class Robot(object):
         return next_cell
     
     def random_explore(self):
-        '''Purely random mapping only to use as a baseline for the poorest possible performance.'''
+        '''
+            Purely random mapping only to use as a baseline for the poorest possible performance.
+        '''
         
         #randomly choose the index of a direction in the the sensor array
         if np.count_nonzero(self.sensors) >= 1:
@@ -563,7 +585,9 @@ class Robot(object):
         return rotation, movement
     
     def avoid_dead_ends_explore(self):
-        '''Random selection of available openings while trying to avoid dead ends. Tries to improve on random_explore.'''
+        '''
+            Random selection of available openings while trying to avoid dead ends. Tries to improve on random_explore.
+        '''
         
         #if there are more than 1 open directions to choose, pick one at random
         if np.count_nonzero(self.sensors) > 1:
@@ -607,9 +631,11 @@ class Robot(object):
         return rotation,movement
     
     def smart_map_explore1(self):
-        '''This exploring function is meant to employ the faster mapping function as well as improved
-           mapping strategy that will try to get to the goal as quickly as possible, then continue
-           mapping until a mapping threshold is met, or until the reset threshold is met.'''
+        '''
+            This exploring function is meant to employ the faster mapping function as well as improved
+            mapping strategy that will try to get to the goal as quickly as possible, then continue
+            mapping until a mapping threshold is met, or until the reset threshold is met.
+        '''
         
         #To prevent getting caught in loops, keep a tally of the sum of the rotations.
         #If the sum rises above 4 or below -4, the robot has come full circle.
@@ -728,10 +754,11 @@ class Robot(object):
         return rotation,movement
 
     def smart_map_explore2(self):
-        '''This exploring function is meant to employ the faster mapping function as well as the nearest neighbor
-           function to choose which turns to make based on proximity to nearest un/dermapped cell.'''
-        
-        '''Not implemented yet. For future improvements. This is just a copy of smart_map_explore1 for now.'''
+        ''' This exploring function is meant to employ the faster mapping function as well as the nearest neighbor
+            function to choose which turns to make based on proximity to nearest un/dermapped cell.
+           
+            Not implemented yet. For future improvements. This is just a copy of smart_map_explore1 for now.
+        '''
         
         #To prevent getting caught in loops, keep a tally of the sum of the rotations.
         #If the sum rises above 4 or below -4, the robot has come full circle.
@@ -879,7 +906,7 @@ class Robot(object):
         
         return neighbors
 
-    def cost1(self, prev_cell, cell, next_cell, start):
+    def cost(self, prev_cell, cell, next_cell, start):
         #get current cell heading based on previous cell
         if cell != start:
             heading = [k for k,v in dir_move.iteritems() if v == map(sub,cell,prev_cell)][0]
@@ -887,22 +914,6 @@ class Robot(object):
         next_cell_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,cell)][0]
         #if these headings are equal, get cost for going straight
         if cell == start:
-            cost = self.no_rotate_cost
-        elif heading == next_cell_heading:
-            cost = self.no_rotate_cost
-        #if the headings are not the same, get cost for turning
-        else:
-            cost = self.rotate_cost
-        return cost
-        
-    def cost2(self, prev_cell, cell, next_cell):
-        #get current cell heading based on previous cell
-        if cell not in self.goals:
-            heading = [k for k,v in dir_move.iteritems() if v == map(sub,cell,prev_cell)][0]
-        #get heading necessary to move into the next cell
-        next_cell_heading = [k for k,v in dir_move.iteritems() if v == map(sub,next_cell,cell)][0]
-        #if these headings are equal, get cost for going straight
-        if cell in self.goals:
             cost = self.no_rotate_cost
         elif heading == next_cell_heading:
             cost = self.no_rotate_cost
@@ -921,7 +932,7 @@ class Robot(object):
 ### NOTE: This implementation of A* search was adapted from Amit Patel's Red Blob Games website: http://www.redblobgames.com/
 ###
 
-    def a_star_search1(self, start, target):
+    def a_star_search(self, start, target):
         open = []
         heapq.heappush(open, (0, start))
         came_from = {}
@@ -957,7 +968,7 @@ class Robot(object):
                         
                         #To calculate the current heading to determine whether a turn is needed we need the
                         #previous cell from which the robot moved to the current cell. This can be found in came_from.
-                        move_cost = self.cost_so_far[current] + self.cost1(came_from[current],current, next_cell, start)
+                        move_cost = self.cost_so_far[current] + self.cost(came_from[current],current, next_cell, start)
                         #if next not in cost_so_far or new_cost < cost_so_far[next]:
                         if move_cost < self.cost_so_far.get(next_cell, float("inf")):
                             self.cost_so_far[next_cell] = move_cost
@@ -976,64 +987,6 @@ class Robot(object):
         
         return path
 
-#This second implementation of A* Search runs in reverse, from goal to start, of the first implementation above.
-#This allows for a route to be planned without actually waiting for the exact location of the goal entrance
-#to be found.
-    def a_star_search2(self):
-        open = []
-        came_from = {}
-        #cost_so_far = {}
-        for i in self.goals:
-            heapq.heappush(open, (0, i))
-            came_from[i] = None           #Every key in came_from is a cell in the maze and 
-                                          #has for its value the previous cell the robot was in.
-            self.cost_so_far[i] = 0            
-                                          #Every key in cost_so_far is a cell in the maze and
-                                          #has for its value the number of steps to get to that cell
-                                          #from self.start (0,0) plus the cost of moving to this same
-                                          #cell from the previous cell.
-        found = False  # flag that is set when goal is found
-        resign = False # flag set if robot can't find goal
-        count = 0
-        
-        #This loop tracks the cost to get from any cell to the goal
-        while not found and not resign:
-            if len(open) == 0:
-                resign = True
-                print "Failed to find route to goal."
-            else:
-                count += 1
-                current = heapq.heappop(open)[1]
-                
-                #if current == self.goal_door_location:
-                if current == self.start:
-                    found = True
-                #else:
-                elif current in self.maze_map:
-                    #print 'test1'
-                    for next_cell in self.neighbors(current):
-                        # f = g + h: typical format for cost function for A* search
-                        #Calculate the cost for moving from the current cell to any of the available neighhbors.
-                        #The cost for moving to a neighbor in the same direction will be 1 and that for moving
-                        #to a neighbor requiring a rotation will be 2.
-                        #To calculate the current heading to determine whether a turn is needed we need the
-                        #previous cell from which the robot moved to the current cell. This can be found in came_from.
-                        move_cost = self.cost_so_far[current] + self.cost2(came_from[current],current, next_cell)
-                        #if next not in cost_so_far or new_cost < cost_so_far[next]:
-                        if move_cost < self.cost_so_far.get(next_cell, float("inf")):
-                            self.cost_so_far[next_cell] = move_cost
-                            priority = move_cost + self.heuristic(self.start, next_cell)
-                            heapq.heappush(open,(priority, next_cell))
-                            came_from[next_cell] = current
-        
-        #Once costs have all been calculated, we can now unpack the path to get from S to G
-        current1 = self.start
-        path = [current1]
-        while current1 not in self.goals:
-            current1 = came_from[current1]
-            path.append(current1)
-        
-        return path
     
     def d_star_lite_search(self):
         value = {}          #Every key in value is one the orientations - u, r, d, l - that have each cell as values.
