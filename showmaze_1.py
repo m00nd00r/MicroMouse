@@ -1,7 +1,7 @@
 from maze import Maze
 import turtle
 import sys
-import ghostscript
+import canvasvg
 
 def run(argv, rmap = None):
     '''
@@ -13,7 +13,7 @@ def run(argv, rmap = None):
     testmaze = Maze(argv)
 
     # Intialize the window and drawing turtle.
-    window = turtle.Screen()
+    #window = turtle.Screen()
     wally = turtle.Turtle()
     wally.speed(0)
     wally.hideturtle()
@@ -60,10 +60,13 @@ def run(argv, rmap = None):
                 wally.goto(origin + sq_size * x + sq_size / 2, origin + sq_size * y + sq_size / 4)
                 wally.write(rmap.get((x,y),''),align = "center",font = ("Arial",10,"normal"))
                 
-    ps = wally.getscreen().getcanvas().postscript(file='tmp.ps', colormode='mono')
-    args = ["gs", "-sDEVICE=jpeg", "-sOutputFile=tmp.jpg", "-dJPEGQ=100", "-r300", "-dDEVICEWIDTHPOINTS=100", \
-            "-dDEVICEHEIGHTPOINTS=100", "-dPSFitPage","-dBATCH", "-dNOPAUSE", "tmp.ps"]
-    ghostscript.Ghostscript(*args)
+    #ps = wally.getscreen().getcanvas().postscript(file='tmp.ps', colormode='mono')
+    cv = wally.getscreen().getcanvas()
+    canvasvg.saveall("tmp.svg", cv)
+    #args = ["gs", "-sDEVICE=jpeg", "-sOutputFile=tmp.jpg", "-dJPEGQ=100", "-r300", "-dDEVICEWIDTHPOINTS=100", \
+    #        "-dDEVICEHEIGHTPOINTS=100", "-dPSFitPage","-dBATCH", "-dNOPAUSE", "tmp.ps"]
+    #args = ["gs", "-dBATCH", "-dNOPAUSE", "-sDEVICE=jpeg", "-sOutputFile=tmp.jpg", "-dJPEGQ=100", "-r300", "tmp.ps"]
+    #ghostscript.Ghostscript(*args)
     #window.exitonclick()
     
 if __name__ == "__main__":
