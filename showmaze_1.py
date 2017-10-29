@@ -1,6 +1,7 @@
 from maze import Maze
 import turtle
 import sys
+import ghostscript
 
 def run(argv, rmap = None):
     '''
@@ -59,8 +60,11 @@ def run(argv, rmap = None):
                 wally.goto(origin + sq_size * x + sq_size / 2, origin + sq_size * y + sq_size / 4)
                 wally.write(rmap.get((x,y),''),align = "center",font = ("Arial",10,"normal"))
                 
-    window.exitonclick()
+    ps = wally.getscreen().getcanvas().postscript(file='tmp.ps', colormode='mono')
+    args = ["gs", "-sDEVICE=jpeg", "-sOutputFile=tmp.jpg", "-dJPEGQ=100", "-r300", "-dDEVICEWIDTHPOINTS=100", \
+            "-dDEVICEHEIGHTPOINTS=100", "-dPSFitPage","-dBATCH", "-dNOPAUSE", "tmp.ps"]
+    ghostscript.Ghostscript(*args)
+    #window.exitonclick()
     
-
 if __name__ == "__main__":
     run(str(sys.argv[1]))

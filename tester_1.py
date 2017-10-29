@@ -2,6 +2,7 @@ from maze import Maze
 from robot import Robot
 import sys
 import showmaze_1
+import os
 
 # global dictionaries for robot movement and sensing
 dir_sensors = {'u': ['l', 'u', 'r'], 'r': ['u', 'r', 'd'],
@@ -17,7 +18,7 @@ dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
 max_time = 1000
 train_score_mult = 1/30.
 
-def main(argv1, argv2 = None, output = True):
+def main(argv1, output = True):
     '''
     This script tests a robot based on the code in robot.py on a maze given
     as an argument when running the script.
@@ -27,9 +28,9 @@ def main(argv1, argv2 = None, output = True):
     testmaze = Maze(argv1)
     
     # Check if 'showroute' argument is present.
-    try:
-        showroute = argv2
-    except:
+    if os.environ['SHOWROUTE'] == 'True':
+        showroute = True
+    else:
         showroute = False
 
     # Intitialize a robot; robot receives info about maze dimensions.
@@ -134,7 +135,4 @@ def main(argv1, argv2 = None, output = True):
         
 if __name__ == "__main__":
     
-    try:
-        main(str(sys.argv[1]), str(sys.argv[2]))
-    except:
-        main(str(sys.argv[1]))
+    main(str(sys.argv[1]))
